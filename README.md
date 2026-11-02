@@ -21,6 +21,8 @@ mila-draw-ai/
 ├── README.md              этот файл
 ├── .claude/
 │   ├── CLAUDE.md          контекст для Claude Code: о проекте, правила, машины
+│   ├── develop/           планы работ по машинам: шаги, статусы, журнал
+│   │   └── mac/plan.md
 │   └── research/          ресерч (28.10.2026)
 │       ├── README.md      краткие выводы — начинать отсюда
 │       ├── 01-hardware.md что тянет MacBook и MSI, роли машин
