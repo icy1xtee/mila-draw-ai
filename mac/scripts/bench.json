@@ -1,0 +1,28 @@
+{
+  "name": "bench",
+  "purpose": "benchmarks",
+  "models": ["anima-turbo", "anima-aesthetic", "flux3-klein", "wai-illustrious"],
+  "seeds": [1],
+  "prompts": [
+    {
+      "id": "square",
+      "width": 1024,
+      "height": 1024,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, small apartment room, desk, desk lamp, window, night, city lights, rain. A small apartment room in the evening, lit by a warm desk lamp; city lights blur behind rain on the window.",
+        "illustrious": "no humans, scenery, indoors, bedroom, desk, desk lamp, window, night, city lights, rain, warm lighting",
+        "flux": "Anime-style background illustration of a small apartment room in the evening, no people. A warm desk lamp lights a cluttered desk; through the window behind it, city lights blur behind rain on the glass. Soft, cinematic lighting."
+      }
+    },
+    {
+      "id": "wide",
+      "width": 1600,
+      "height": 896,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, small apartment room, desk, desk lamp, window, night, city lights, rain. A small apartment room in the evening, lit by a warm desk lamp; city lights blur behind rain on the window.",
+        "illustrious": "no humans, scenery, indoors, bedroom, desk, desk lamp, window, night, city lights, rain, warm lighting",
+        "flux": "Anime-style background illustration of a small apartment room in the evening, no people. A warm desk lamp lights a cluttered desk; through the window behind it, city lights blur behind rain on the glass. Soft, cinematic lighting."
+      }
+    }
+  ]
+}

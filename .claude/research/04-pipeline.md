@@ -88,9 +88,9 @@
 1. **Установка** — по [msi/README.md](../../msi/README.md) и [mac/README.md](../../mac/README.md).
    - Katana: ComfyUI Desktop + ComfyUI-Manager.
    - Mac: Draw Things.
-   - Скачать: WAI-Illustrious v16 (или NoobAI-XL), Anima Aesthetic + Base + Turbo,
+   - Скачать: WAI-Illustrious v17 (или NoobAI-XL), Anima Aesthetic + Base + Turbo,
      FLUX 3 Image Klein (INT8 / FP8).
-   - Записать замеры скорости на обеих машинах в `.claude/research/benchmarks.md`.
+   - Записать замеры скорости: `mac/benchmarks.md`, `msi/benchmarks.md`.
 2. **Сравнение моделей.** Одинаковый набор:
    - 5 разных фонов (интерьер и экстерьер, день и ночь);
    - 3 спрайта Милы по её текстовому описанию;

@@ -1,0 +1,78 @@
+{
+  "base": {
+    "batch_count": 1,
+    "batch_size": 1,
+    "strength": 1,
+    "seed_mode": "Scale Alike",
+    "hires_fix": false,
+    "upscaler": null,
+    "refiner_model": null,
+    "loras": [],
+    "controls": [],
+    "tea_cache": false,
+    "tiled_diffusion": false,
+    "tiled_decoding": false,
+    "sharpness": 0
+  },
+  "models": {
+    "anima-turbo": {
+      "name": "Anima Turbo 1.0 (8-bit S)",
+      "family": "anima",
+      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-turbo-1.0/metadata.json",
+      "negative": "worst quality, low quality, score_1, score_2, score_3, artist name",
+      "params": {
+        "model": "anima_turbo_1.0_i8x.ckpt",
+        "steps": 8,
+        "guidance_scale": 1,
+        "sampler": "DDIM Trailing",
+        "resolution_dependent_shift": true,
+        "clip_skip": 2
+      }
+    },
+    "anima-aesthetic": {
+      "name": "Anima Aesthetic 1.1 (8-bit S)",
+      "family": "anima",
+      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-aesthetic-1.1/metadata.json",
+      "negative": "worst quality, low quality, score_1, score_2, score_3, artist name",
+      "params": {
+        "model": "anima_aesthetic_1.1_i8x.ckpt",
+        "steps": 30,
+        "guidance_scale": 4,
+        "sampler": "DDIM Trailing",
+        "resolution_dependent_shift": true,
+        "clip_skip": 2
+      }
+    },
+    "flux3-klein": {
+      "name": "FLUX.3 [klein] 5.6B (8-bit S)",
+      "family": "flux",
+      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/flux-3-klein/metadata.json",
+      "note": "Draw Things recommends shift 16, but its API accepts 0.1-12",
+      "params": {
+        "model": "flux_3_klein_i8x.ckpt",
+        "steps": 16,
+        "guidance_scale": 1,
+        "sampler": "DDIM Trailing",
+        "shift": 12,
+        "resolution_dependent_shift": false,
+        "clip_skip": 1
+      }
+    },
+    "wai-illustrious": {
+      "name": "WAI-Illustrious-SDXL v17.0 (FP16)",
+      "family": "illustrious",
+      "source": "https://civitai.com/models/827184",
+      "prefix": "masterpiece, best quality, amazing quality, ",
+      "negative": "bad quality, worst quality, worst detail, sketch, censor, nsfw",
+      "params": {
+        "model": "waiillustrioussdxl_v170_f16.ckpt",
+        "steps": 28,
+        "guidance_scale": 6,
+        "sampler": "Euler a",
+        "shift": 1,
+        "resolution_dependent_shift": false,
+        "clip_skip": 2
+      }
+    }
+  }
+}
