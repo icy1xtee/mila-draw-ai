@@ -1,0 +1,91 @@
+{
+  "name": "bake-off",
+  "purpose": "benchmarks",
+  "models": ["anima-turbo", "wai-illustrious", "flux3-klein", "anima-aesthetic"],
+  "seeds": [1, 2],
+  "prompts": [
+    {
+      "id": "mark-room-night",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, night, russia, window, desk lamp, table, paper, notebook, cardboard box, curtains. Semi-realistic anime background art of a small cramped room in a Soviet-era apartment block in a Russian city in the mid-2000s, at night. A warm desk lamp lights a table covered with handwritten notes and papers; unopened moving boxes stand along the wall. Through the window, across a dark courtyard, stands an old abandoned building, and a single window in it glows warm yellow. Quiet, lonely, slightly uneasy mood.",
+        "illustrious": "no humans, scenery, indoors, night, russia, window, desk lamp, table, paper, notebook, cardboard box, curtains, building, lit window, dark, lamplight, warm lighting, blue theme, semi-realistic, detailed background",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. A small, cramped room in a Soviet-era apartment block in a Russian city in the mid-2000s, at night. A warm desk lamp lights a table covered with handwritten notes, a notebook and printed papers; unopened cardboard moving boxes stand along the wall. The window is the focal point: across a dark courtyard stands an old, abandoned building with boarded windows, and exactly one of its windows glows warm yellow. Dim, quiet, slightly uneasy atmosphere; warm lamp light against the cold blue night."
+      }
+    },
+    {
+      "id": "courtyard-day",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, outdoors, day, russia, building, apartment, tree, bench, playground, car, balcony, overcast. Semi-realistic anime background art of an ordinary residential courtyard in a Russian city in the mid-2000s, between grey five-storey Soviet-era concrete panel apartment blocks (khrushchyovka). Entrance doors with small concrete canopies, a bench, an old playground, a few parked older cars, laundry on the balconies. Soft overcast daylight; an everyday, slightly worn, lived-in neighbourhood.",
+        "illustrious": "no humans, scenery, outdoors, day, russia, apartment, building, courtyard, tree, bare tree, bench, playground, car, balcony, laundry, overcast, cloudy sky, semi-realistic, detailed background",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. An ordinary residential courtyard in a Russian city in the mid-2000s, between grey five-storey Soviet-era concrete panel apartment blocks (khrushchyovka), on an overcast day. Entrance doors with small concrete canopies, a wooden bench, an old playground, a few parked older cars, laundry hanging on balconies, bare trees. Soft, flat daylight; an everyday, slightly worn neighbourhood that feels lived-in and calm."
+      }
+    },
+    {
+      "id": "cafe-day",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, day, cafe, counter, cup, bread, table, chair, window, sunlight, plant. Semi-realistic anime background art of a small, cozy neighbourhood bakery-cafe. A wooden counter with fresh pastries and stacked cups, a coffee machine, a few small tables; paper napkins with little ink sketches are pinned to the wall. Warm sunlight through the shop window; a warm, homely and safe mood.",
+        "illustrious": "no humans, scenery, indoors, day, cafe, bakery, counter, cup, coffee, bread, pastry, table, chair, window, sunlight, plant, cozy, warm lighting, semi-realistic, detailed background",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. A small, cozy neighbourhood bakery-cafe on a weekday afternoon. A wooden counter with fresh pastries and stacked cups, a coffee machine, a chalkboard menu, a few small tables with chairs. Paper napkins with small ink sketches are pinned to the wall by the counter. Warm sunlight falls through the shop window; the mood is warm, homely and safe."
+      }
+    },
+    {
+      "id": "archive-day",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, day, library, bookshelf, book stack, paper, map, table, cabinet, window, sunlight, light rays, dust. Semi-realistic anime background art of a small district archive in an old public building. Long tables with stacks of bound newspapers and unfolded old city plans, wooden card-catalogue cabinets, tall shelves of cardboard folders. Dusty daylight through tall windows; quiet, slightly stale, full of paper.",
+        "illustrious": "no humans, scenery, indoors, day, library, bookshelf, book stack, paper, map, table, cabinet, drawer, window, sunlight, light rays, dust, semi-realistic, detailed background",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. A small municipal archive and reading room in an old public building. Long wooden tables with stacks of bound newspaper volumes and unfolded old city plans, wooden card-catalogue cabinets with small drawers, tall shelves of cardboard folders. Dusty daylight falls through tall windows in visible rays; the room is quiet, slightly stale and full of paper."
+      }
+    },
+    {
+      "id": "house-night",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, outdoors, night, russia, building, abandoned, boarded window, window, fence, puddle, reflection, dark, street lamp. Semi-realistic anime background art of an old abandoned three-storey brick house in a Russian residential district at night. Its windows are boarded up and a construction fence surrounds it; only one upper-floor window glows warm yellow, as if someone lives there. Wet asphalt reflects that light; the neighbouring buildings are dark. Mysterious, quiet, unsettling mood.",
+        "illustrious": "no humans, scenery, outdoors, night, russia, building, abandoned, boarded window, fence, lit window, puddle, reflection, wet ground, dark, street lamp, mysterious, semi-realistic, detailed background",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. An old, abandoned three-storey brick house in a Russian residential district at night. Its windows are boarded up and a metal construction fence surrounds it; the whole house is dark except for a single upper-floor window that glows warm yellow, as if someone lives there. Wet asphalt in the foreground reflects that light. Cold blue night, quiet and unsettling."
+      }
+    },
+    {
+      "id": "mark-sprite",
+      "width": 768,
+      "height": 1344,
+      "prompt": {
+        "anima": "1boy, solo, full body, standing, looking at viewer, simple background, white background, short hair, light brown hair, grey eyes, jacket, open jacket, hoodie, jeans, sneakers, hand in pocket. Semi-realistic anime character art of a slim, fairly tall young man of about 20. Dark blond hair, grey eyes; a plain jacket open over a grey hoodie, faded jeans and worn sneakers, mid-2000s casual clothes. He stands relaxed but a little awkward, curious, one hand in his pocket.",
+        "illustrious": "1boy, solo, male focus, full body, standing, looking at viewer, simple background, white background, short hair, light brown hair, grey eyes, jacket, open jacket, hoodie, grey hoodie, jeans, sneakers, hand in pocket, slim, semi-realistic",
+        "flux": "Semi-realistic anime-style full-body character sprite for a visual novel, on a plain white background. A slim, fairly tall young man of about 20, standing and facing the viewer in a relaxed but slightly awkward pose, one hand in his jacket pocket, curious expression. Dark blond hair, grey eyes. Plain mid-2000s casual clothes: a dark jacket open over a grey hoodie, faded blue jeans, worn sneakers. Even, soft studio lighting; the whole figure is visible from head to feet. No text or labels."
+      },
+      "negative": "text, character name, reference sheet, measurements"
+    },
+    {
+      "id": "anna-sprite",
+      "width": 768,
+      "height": 1344,
+      "prompt": {
+        "anima": "1girl, solo, full body, standing, looking at viewer, head tilt, simple background, white background, medium hair, brown hair, cardigan, blouse, long skirt, arms at sides. Semi-realistic anime character art of a young woman of about 21, of average height and ordinary build. A deliberately unremarkable look: plain shoulder-length dark brown hair, a soft cardigan over a simple blouse, a plain long skirt, homely clothes without bright details. She stands very still with her head slightly tilted, quiet and mysterious.",
+        "illustrious": "1girl, solo, full body, standing, looking at viewer, head tilt, simple background, white background, medium hair, brown hair, cardigan, blouse, long skirt, arms at sides, expressionless, semi-realistic",
+        "flux": "Semi-realistic anime-style full-body character sprite for a visual novel, on a plain white background. A young woman of about 21, of average height and ordinary build, standing very still and facing the viewer, head slightly tilted, calm and quietly mysterious expression. A deliberately unremarkable appearance: plain shoulder-length dark brown hair, a soft beige cardigan over a simple white blouse, a plain long grey skirt, flat shoes. Even, soft studio lighting; the whole figure is visible from head to feet. No text or labels."
+      },
+      "negative": "text, character name, reference sheet, measurements"
+    },
+    {
+      "id": "marta-sprite",
+      "width": 768,
+      "height": 1344,
+      "prompt": {
+        "anima": "1girl, solo, full body, standing, looking at viewer, smile, leaning forward, simple background, white background, hair up, messy hair, brown hair, shirt, sleeves rolled up, apron, jeans, holding cup. Semi-realistic anime character art of a young woman of about 23, a barista and artist, rather short with an ordinary build. Chestnut hair hastily tied up; a plaid shirt with rolled-up sleeves, a work apron and jeans. A warm, open, lively pose: she leans slightly forward, smiling, holding a cup of coffee.",
+        "illustrious": "1girl, solo, full body, standing, looking at viewer, smile, leaning forward, simple background, white background, hair up, messy hair, brown hair, plaid shirt, sleeves rolled up, apron, jeans, sneakers, holding cup, coffee cup, semi-realistic",
+        "flux": "Semi-realistic anime-style full-body character sprite for a visual novel, on a plain white background. A young woman of about 23, a barista and artist, rather short with an ordinary build, standing and facing the viewer, leaning slightly forward in a warm, open pose, friendly smile, holding a coffee cup. Chestnut hair hastily tied up with loose strands. A plaid shirt with rolled-up sleeves, a dark work apron with a pencil in its pocket, jeans and sneakers. Even, soft studio lighting; the whole figure is visible from head to feet. No text or labels."
+      },
+      "negative": "text, character name, reference sheet, measurements"
+    }
+  ]
+}

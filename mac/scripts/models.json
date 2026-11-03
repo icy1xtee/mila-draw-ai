@@ -18,8 +18,9 @@
     "anima-turbo": {
       "name": "Anima Turbo 1.0 (8-bit S)",
       "family": "anima",
-      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-turbo-1.0/metadata.json",
-      "negative": "worst quality, low quality, score_1, score_2, score_3, artist name",
+      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-turbo-1.0/metadata.json; prefix and negative: https://huggingface.co/circlestone-labs/Anima",
+      "prefix": "masterpiece, best quality, score_7, safe, ",
+      "negative": "worst quality, low quality, score_1, score_2, score_3, artist name, blurry, jpeg artifacts, chromatic aberration",
       "params": {
         "model": "anima_turbo_1.0_i8x.ckpt",
         "steps": 8,
@@ -32,8 +33,10 @@
     "anima-aesthetic": {
       "name": "Anima Aesthetic 1.1 (8-bit S)",
       "family": "anima",
-      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-aesthetic-1.1/metadata.json",
-      "negative": "worst quality, low quality, score_1, score_2, score_3, artist name",
+      "source": "https://github.com/drawthingsai/community-models/blob/main/configs/anima-aesthetic-1.1/metadata.json; prefix and negative: https://huggingface.co/circlestone-labs/Anima",
+      "note": "the model card advises no score_* tags for Aesthetic, positive or negative",
+      "prefix": "masterpiece, best quality, safe, ",
+      "negative": "worst quality, low quality, artist name, blurry, jpeg artifacts, chromatic aberration",
       "params": {
         "model": "anima_aesthetic_1.1_i8x.ckpt",
         "steps": 30,
