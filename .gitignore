@@ -6,3 +6,6 @@ web-interface/.venv/
 web-interface/.cache/
 web-interface/.env
 __pycache__/
+
+# studio.bat logs and pid files
+logs/

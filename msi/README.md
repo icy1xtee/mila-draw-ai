@@ -54,7 +54,9 @@ LoRA для больших моделей (FLUX 3 Klein, Qwen) проще учи
      `C:\Windows\System32\tar.exe -xf <архив>` в `C:\AI\`, папку переименовать в `ComfyUI`.
    - ComfyUI-Manager встроен: `python_embeded\python.exe -s -m pip install -r
      ComfyUI\manager_requirements.txt`, запуск с `--enable-manager`.
-   - Запуск — [scripts/comfy_start.bat](scripts/comfy_start.bat): без аргументов только этот
+   - Запуск — `studio start comfy` из корня репо (фоном, лог в `logs\comfy.log`, см.
+     [web-interface](../web-interface/README.md#запуск-и-остановка)). Внутри —
+     [scripts/comfy_start.bat](scripts/comfy_start.bat): без аргументов только этот
      компьютер, `comfy_start.bat lan` — домашняя сеть. Интерфейс — `http://127.0.0.1:8188`.
 4. **Custom nodes:**
    - [ComfyUI_VNCCS](https://github.com/AHEKOT/ComfyUI_VNCCS) и VNCCS-Utils (нужен для Pose
@@ -86,13 +88,22 @@ Anima, FLUX 3 Klein и утилиты (≈ 40 ГБ), Qwen-Image — нет; по
 
 ## Веб-интерфейс
 
-Рабочее место Милы — [web-interface/](../web-interface/README.md): `web-interface\start.bat`
-поднимает ComfyUI (если он не запущен) и интерфейс на порту 8000. ComfyUI при этом остаётся
-на `127.0.0.1`: с ним говорит только сервер интерфейса.
+Рабочее место Милы — [web-interface/](../web-interface/README.md). Из корня репо (в
+PowerShell — с `.\` впереди):
+
+```bat
+studio start      :: ComfyUI + интерфейс на порту 8000, фоном
+studio stop       :: погасить оба
+studio status     :: что запущено и адреса
+```
+
+Остальные команды (по отдельности, логи) — в
+[README интерфейса](../web-interface/README.md#запуск-и-остановка). ComfyUI остаётся на
+`127.0.0.1`: с ним говорит только сервер интерфейса.
 
 ## Генерация из терминала (API ComfyUI)
 
-ComfyUI запущен ([scripts/comfy_start.bat](scripts/comfy_start.bat)), затем:
+ComfyUI запущен (`studio start comfy`), затем:
 
 ```bat
 C:\AI\ComfyUI\python_embeded\python.exe -I msi\scripts\comfy_generate.py msi\scripts\smoke.json
