@@ -14,8 +14,8 @@
 описание — новый файл в `sources/`, затем правка карточек и промптов.
 
 Начало любой сессии: прочитать [research/README.md](research/README.md) — выбор моделей,
-инструментов и железа, план первых шагов и открытые вопросы — и план машины
-([develop/mac/plan.md](develop/mac/plan.md)).
+инструментов и железа, план первых шагов и открытые вопросы — и план той машины, на которой
+идёт сессия ([develop/mac/plan.md](develop/mac/plan.md) или [develop/msi/plan.md](develop/msi/plan.md)).
 
 ## Две машины — две папки
 
@@ -25,12 +25,13 @@
 - [mac/](../mac/README.md) — **MacBook Air M4 24 ГБ**. Черновики, точечные правки, правки по
   инструкции (Draw Things), Krita как холст (генерирует ComfyUI на MSI), проверка цвета. Не для
   пачек и долгого обучения: нет вентилятора, минуты на картинку.
-- [msi/](../msi/README.md) — **MSI Katana 17 B12V** (RTX 4050 6 ГБ / 4060 8 ГБ / 4070 8 ГБ —
-  суффикс пока не известен). Основная станция: ComfyUI, пачки фонов и спрайтов (VNCCS), обучение
+- [msi/](../msi/README.md) — **MSI Katana 17 B12VFK** (RTX 4060 Laptop 8 ГБ, 16 ГБ RAM, SSD
+  512 ГБ). Основная станция: ComfyUI, пачки фонов и спрайтов (VNCCS), обучение
   LoRA на Illustrious и Anima, сервер ComfyUI для Krita на Mac и для Claude Code.
 
 План работ по каждой машине — `.claude/develop/<машина>/plan.md` (шаги со статусами и журнал;
-сейчас есть [develop/mac/plan.md](develop/mac/plan.md)). После каждого шага обновлять статус и
+есть [develop/mac/plan.md](develop/mac/plan.md) и
+[develop/msi/plan.md](develop/msi/plan.md)). После каждого шага обновлять статус и
 журнал.
 
 Задачу кладём в папку той машины, на которой её выполняют. Общее для обеих (библия проекта,
