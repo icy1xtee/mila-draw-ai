@@ -1,0 +1,15 @@
+{
+  "_doc": "LoRA files in C:\\AI\\ComfyUI\\ComfyUI\\models\\loras\\. A file that is there but not listed here still shows in the web-interface as 'no description'. family: illustrious | anima | flux. strength: default; range: [min, max] for the slider.",
+  "_example": {
+    "file": "example-style.safetensors",
+    "family": "illustrious",
+    "title": "Пример: стиль",
+    "hint": "для чего и когда включать",
+    "trigger": "example style",
+    "strength": 0.8,
+    "range": [0, 1.2],
+    "source": "https://civitai.com/models/...",
+    "license": "..."
+  },
+  "loras": []
+}

@@ -1,0 +1,26 @@
+{
+  "name": "msi-smoke",
+  "purpose": "benchmarks",
+  "models": [
+    "anima-turbo",
+    "anima-aesthetic",
+    "flux3-klein",
+    "wai-illustrious"
+  ],
+  "seeds": [
+    1,
+    2
+  ],
+  "prompts": [
+    {
+      "id": "mark-room-night",
+      "width": 1344,
+      "height": 768,
+      "prompt": {
+        "anima": "no humans, scenery, indoors, night, window, desk lamp, table, paper, notebook, cardboard box, curtains, building, brick wall, fire escape, lit window, neon lights, pink light. Semi-realistic anime background art of a small cramped room in an old tenement of a dense, neon-lit night city. A warm desk lamp lights a table covered with handwritten notes and papers; unopened moving boxes stand along the wall. The window looks across a narrow alley at an old red brick building with iron fire escapes, where one window glows warm; magenta neon from the street below spills across the ceiling. Cold blue-violet shadows against the warm lamp, quiet and slightly uneasy, subtle film grain.",
+        "illustrious": "no humans, scenery, indoors, night, window, desk lamp, table, paper, notebook, cardboard box, curtains, building, brick wall, fire escape, lit window, neon lights, pink light, purple theme, lamplight, warm lighting, semi-realistic, detailed background, film grain",
+        "flux": "Semi-realistic anime-style background art for a visual novel, wide shot, no people. A small, cramped room in an old tenement of a dense, neon-lit night city, the kind of building with an air-conditioning unit bolted under every window. A warm desk lamp lights a table covered with handwritten notes, a notebook and printed papers; unopened cardboard moving boxes stand along the wall. The window is the focal point: across a narrow alley stands an old red brick apartment building with iron fire escapes, and one of its windows glows warm amber. Magenta and pink neon light from the street below spills across the ceiling. Cold blue-violet shadows against the warm lamp; quiet, lonely, slightly uneasy; subtle film grain."
+      }
+    }
+  ]
+}

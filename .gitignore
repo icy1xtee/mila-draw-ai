@@ -1,2 +1,8 @@
 .DS_Store
 content
+
+# web-interface
+web-interface/.venv/
+web-interface/.cache/
+web-interface/.env
+__pycache__/

@@ -49,7 +49,13 @@ LoRA для больших моделей (FLUX 3 Klein, Qwen) проще учи
 2. **Git.**
 3. **ComfyUI** — portable-сборка для NVIDIA из [репозитория](https://github.com/Comfy-Org/ComfyUI)
    в `C:\AI\ComfyUI\` (почему не Desktop — в [плане](../.claude/develop/msi/plan.md), шаг 2).
-   Плюс ComfyUI-Manager для установки custom nodes. Python для наших скриптов — через `uv`.
+   Python для наших скриптов — через `uv`. Стоит **v0.44.0** (07.11.2026).
+   - Установка: скачать `ComfyUI_windows_portable_nvidia.7z` из релиза, распаковать
+     `C:\Windows\System32\tar.exe -xf <архив>` в `C:\AI\`, папку переименовать в `ComfyUI`.
+   - ComfyUI-Manager встроен: `python_embeded\python.exe -s -m pip install -r
+     ComfyUI\manager_requirements.txt`, запуск с `--enable-manager`.
+   - Запуск — [scripts/comfy_start.bat](scripts/comfy_start.bat): без аргументов только этот
+     компьютер, `comfy_start.bat lan` — домашняя сеть. Интерфейс — `http://127.0.0.1:8188`.
 4. **Custom nodes:**
    - [ComfyUI_VNCCS](https://github.com/AHEKOT/ComfyUI_VNCCS) и VNCCS-Utils (нужен для Pose
      Studio) — конвейер спрайтов. Есть установщик
@@ -57,7 +63,7 @@ LoRA для больших моделей (FLUX 3 Klein, Qwen) проще учи
    - ComfyUI-Impact-Pack — FaceDetailer, перерисовка лиц и рук;
    - ноды, которые требует Krita AI Diffusion (список в
      [документации плагина](https://docs.interstice.cloud));
-   - BiRefNet — вырезание фона.
+   - BiRefNet — не нужен как custom node: удаление фона встроено в ComfyUI 0.44 (модель — в таблице ниже).
 5. **Тренеры LoRA:**
    - [OneTrainer](https://github.com/Nerogar/OneTrainer) — Illustrious / SDXL;
    - [sd-scripts](https://github.com/kohya-ss/sd-scripts) — Anima и SDXL.
@@ -75,7 +81,33 @@ Anima, FLUX 3 Klein и утилиты (≈ 40 ГБ), Qwen-Image — нет; по
 | Anima: Base + Aesthetic + Turbo                    | фоны; Base — для обучения LoRA                   | три файла: DiT, текстовый энкодер Qwen3-0.6B, VAE Qwen-Image   |
 | FLUX 3 Image Klein, INT8                           | правки по инструкции, референсы                  | INT8 рассчитана на 8 ГБ; при 16 ГБ RAM следить за свопом       |
 | Qwen-Image-2.1, GGUF                               | эксперименты, прозрачный фон                     | только после апгрейда RAM до 32 ГБ; некоммерческая лицензия    |
-| апскейлер + BiRefNet                               | фоны до 2560×1440, вырезание спрайтов            | —                                                              |
+| BiRefNet (Comfy-Org, MIT)                          | удаление фона: кнопка в веб-интерфейсе           | стоит: `models/background_removal/birefnet.safetensors`, 444 МБ; встроенные ноды ComfyUI 0.44 |
+| аниме-апскейлер (ESRGAN)                           | фоны до 2560×1440                                | —                                                              |
+
+## Веб-интерфейс
+
+Рабочее место Милы — [web-interface/](../web-interface/README.md): `web-interface\start.bat`
+поднимает ComfyUI (если он не запущен) и интерфейс на порту 8000. ComfyUI при этом остаётся
+на `127.0.0.1`: с ним говорит только сервер интерфейса.
+
+## Генерация из терминала (API ComfyUI)
+
+ComfyUI запущен ([scripts/comfy_start.bat](scripts/comfy_start.bat)), затем:
+
+```bat
+C:\AI\ComfyUI\python_embeded\python.exe -I msi\scripts\comfy_generate.py msi\scripts\smoke.json
+C:\AI\ComfyUI\python_embeded\python.exe -I msi\scripts\comfy_generate.py prompts\bake-off.json --models anima-turbo,flux3-klein
+```
+
+- Файл прогона — тот же формат, что на Mac ([mac/README.md](../mac/README.md)): `name`,
+  `purpose`, `models`, `seeds`, `prompts`.
+- Модели, файлы и параметры — [catalog/models.json](catalog/models.json). Граф для каждого
+  семейства собирается в [scripts/comfy_generate.py](scripts/comfy_generate.py).
+- Картинки, `.json` и `log.jsonl` попадают в `content/` по правилам
+  [content.md](../.claude/develop/mac/content.md). Готовые картинки скрипт пропускает,
+  `--force` рисует их заново, `--out <папка>` продолжает старый прогон.
+- WAI v17 лежит в `checkpoints/` под именем с Civitai `WAI-Nsfw-Illustrious-17.safetensors`,
+  SHA256 сверен.
 
 ## Настройки
 
