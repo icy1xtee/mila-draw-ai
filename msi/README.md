@@ -84,7 +84,7 @@ Anima, FLUX 3 Klein и утилиты (≈ 40 ГБ), Qwen-Image — нет; по
 | FLUX 3 Image Klein, INT8                           | правки по инструкции, референсы                  | INT8 рассчитана на 8 ГБ; при 16 ГБ RAM следить за свопом       |
 | Qwen-Image-2.1, GGUF                               | эксперименты, прозрачный фон                     | только после апгрейда RAM до 32 ГБ; некоммерческая лицензия    |
 | BiRefNet (Comfy-Org, MIT)                          | удаление фона (в Mila Draw AI убрано 08.11)      | стоит: `models/background_removal/birefnet.safetensors`, 444 МБ; встроенные ноды ComfyUI 0.44 |
-| аниме-апскейлер (ESRGAN)                           | фоны до 2560×1440                                | —                                                              |
+| RealESRGAN_x4plus_anime_6B (BSD-3)                 | Hires fix в Mila Draw AI                         | стоит: `models/upscale_models/RealESRGAN_x4plus_anime_6B.pth`, 17,9 МБ, релиз Real-ESRGAN v0.2.2.4 на GitHub, sha256 `f872d837…99da` |
 
 ## Mila Draw AI (веб-интерфейс)
 

@@ -5,7 +5,11 @@ file tools confined to the working directory.
 
 - describe: tool Read only, working directory = the task folder; answer {description, tags}
   is stored in the picture's .json ("analysis").
-- prompt_help: no tools; converts the text, adds nothing (claude/prompt-helper.md).
+- assistant: no tools; Mila's wish → prompt, negative, settings to change and a tip
+  (claude/assistant.md). The prompt takes its content only from the wish (and, for img2img,
+  from the picture's description).
+- brainstorm: tool Read, working directory = the task folder; a photo → several different
+  character ideas, each as tags (tag models) and as sentences (FLUX) (claude/brainstorm.md).
 """
 
 import asyncio
@@ -106,39 +110,169 @@ async def describe(rel_path):
             pass
 
 
-# --- prompt helper ----------------------------------------------------------------------------
+
+
+# --- assistant: wish → prompt, negative, settings, tip -----------------------------------------
 
 FORMATS = {
     "tags": (
         "Теги Danbooru по-английски через запятую: нижний регистр, пробелы вместо "
-        "подчёркиваний. Каждую мысль из текста — тегом; что тегом не передать — короткой "
-        "английской фразой через запятую."
+        "подчёркиваний. Каждую мысль — тегом; что тегом не передать — короткой английской "
+        "фразой через запятую."
     ),
     "flux": (
         "Обычные английские предложения, коротко и прямо, в том порядке, в каком мысли идут "
-        "в тексте."
+        "в пожелании."
     ),
 }
-REFERENCES = (
-    "К генерации прикреплено картинок: {n}. Модель видит их как <ref_image_0>, "
-    "<ref_image_1> и так далее, в порядке прикрепления. Если текст говорит о прикреплённой "
-    "картинке («эта заколка», «на фото», «мой набросок», «первая картинка»), напиши вместо "
-    "этого ссылку <ref_image_N>. Если не говорит — не упоминай картинки."
-)
+MODES = {
+    "text": "без картинки — модель рисует с нуля по промпту.",
+    "img2img": ("img2img — модель перерисовывает первую прикреплённую картинку; насколько "
+                "сильно — решает «сила изменений» (denoise)."),
+    "edit": ("с референсами — модель видит все прикреплённые картинки и рисует новую по "
+             "инструкции."),
+}
+MODE_RULES = {
+    "text": "",
+    "img2img": (
+        "- Модель перерисовывает картинку и не понимает команд: промпт описывает весь результат "
+        "целиком. Возьми теги содержания из описания картинки (теги техники исходника — sketch, "
+        "monochrome, lineart и т. п. — только если пожелание просит их оставить) и добавь "
+        "изменения из пожелания как описание результата: «red hair», а не «make the hair red»."
+    ),
+    "edit": (
+        "- Пиши как инструкцию: что изменить и что оставить как есть.\n"
+        "- Модель видит картинки как <ref_image_0>, <ref_image_1> и так далее, в порядке "
+        "прикрепления. Если пожелание говорит о картинке («эта заколка», «на фото», «мой "
+        "набросок», «вторая картинка»), пиши вместо этого <ref_image_N>."
+    ),
+}
+NEGATIVE_RULES = {
+    True: ("Только то, чего художница просит избежать («без шляпы», «не надо фона»), — тегами "
+           "по-английски. Если ничего такого нет — пустая строка. Стандартный негатив модели "
+           "добавляется сам, не повторяй его."),
+    False: ("Эта модель негатив не понимает: \"negative\" — пустая строка. Если художница просит "
+            "чего-то избежать — опиши в промпте, что должно быть вместо."),
+}
+SETTING_LIMITS = {"steps": (int, 1, 60), "cfg": (float, 0, 15), "denoise": (float, 0.05, 1.0),
+                  "count": (int, 1, 4)}
 
 
-async def prompt_help(text, model, images=0):
-    """Mila's text → prompt in the model's format, nothing added. Returns {prompt, ...info}."""
-    family = model["family"]
-    fmt = FORMATS["flux" if family == "flux" else "tags"]
-    if family == "flux" and images and model.get("references"):
-        fmt += "\n\n" + REFERENCES.format(n=images)
-    prompt = _render("prompt-helper.md", model_title=model.get("title", ""), format=fmt,
-                     text=text.strip())
+def _help():
+    try:
+        return json.loads(config.HELP.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _model_notes(key, model, mode):
+    """What Claude needs to know about the model to advise on settings."""
+    params = (mode == "edit" and model.get("edit_params")) or model["params"]
+    lines = [f"Стандартные настройки: шагов {params['steps']}, CFG {params['cfg']}, "
+             f"сэмплер {params['sampler']}, планировщик {params['scheduler']}."]
+    help_ = _help()
+    family = help_.get("families", {}).get(model["family"], {})
+    section = family.get("text" if mode == "text" else "picture", {})
+    if section.get("how"):
+        lines.append(section["how"])
+    for name in ("steps", "cfg", "denoise", "sampler"):
+        note = help_.get("settings", {}).get(name, {}).get("models", {}).get(key)
+        if note and (name != "denoise" or mode == "img2img"):
+            lines.append(f"{name}: {note}")
+    lines += help_.get("models", {}).get(key, [])
+    return " ".join(lines)
+
+
+def _clean_settings(raw, model, mode):
+    result = {}
+    if not isinstance(raw, dict):
+        return result
+    for name, (kind, low, high) in SETTING_LIMITS.items():
+        if name not in raw or raw[name] in (None, ""):
+            continue
+        if name == "denoise" and mode != "img2img":
+            continue
+        params = (mode == "edit" and model.get("edit_params")) or model["params"]
+        if name == "cfg" and params.get("cfg") == 1:  # distilled model: CFG stays 1
+            continue
+        try:
+            value = kind(raw[name])
+        except (TypeError, ValueError):
+            continue
+        if low <= value <= high:
+            result[name] = round(value, 2) if kind is float else value
+    return result
+
+
+async def assistant(wish, key, model, mode, pictures, preset, settings):
+    """Mila's own words → {prompt, negative, settings, tip}.
+
+    pictures: [{description, tags, medium}] of the attached pictures (Claude's descriptions);
+    preset: the chosen preset or None; settings: what is set now ({steps, cfg, denoise, count}).
+    """
+    tag_model = model["family"] != "flux"
+    fmt = FORMATS["tags" if tag_model else "flux"]
+    if pictures:
+        lines = []
+        for n, p in enumerate(pictures):
+            lines.append(f"{n + 1}) {p.get('description') or 'описания нет'}"
+                         + (f" Теги: {p['tags']}." if p.get("tags") else "")
+                         + (f" Техника: {p['medium']}." if p.get("medium") else ""))
+        pictures_text = "\n" + "\n".join(lines)
+    else:
+        pictures_text = "нет"
+    if preset:
+        adds = preset.get("tags" if tag_model else "text") or ""
+        preset_text = f"«{preset['title']}» — {preset.get('description', '')}" \
+                      + (f" Сама добавляет к промпту: {adds}" if adds else "")
+    else:
+        preset_text = "нет (только промпт художницы)"
+    negative_works = bool(model.get("negative_works", True))
+    prompt = _render(
+        "assistant.md", model_title=model.get("title", key), model_notes=_model_notes(key, model, mode),
+        mode=MODES[mode], preset=preset_text, pictures=pictures_text,
+        settings=json.dumps(settings, ensure_ascii=False), format=fmt,
+        mode_rule=MODE_RULES[mode], negative_rule=NEGATIVE_RULES[negative_works], wish=wish.strip())
     workdir = config.CACHE / "claude"
     workdir.mkdir(parents=True, exist_ok=True)
     result, info = await run_claude(prompt, workdir, [], timeout=120)
-    answer = result.strip().strip("`").strip()
-    if answer.lower().startswith(("prompt:", "промпт:")):
-        answer = answer.split(":", 1)[1].strip()
-    return {"prompt": answer.strip('"').strip(), **info}
+    try:
+        data = _json_answer(result)
+    except ValueError:
+        raise RuntimeError("Claude ответил не в том формате, попробуйте ещё раз")
+    return {
+        "prompt": str(data.get("prompt") or "").strip(),
+        "negative": str(data.get("negative") or "").strip() if negative_works else "",
+        "settings": _clean_settings(data.get("settings"), model, mode),
+        "tip": str(data.get("tip") or "").strip(),
+        **info,
+    }
+
+
+# --- brainstorm: a photo → different character ideas -------------------------------------------
+
+
+async def brainstorm(images, wish, count):
+    """Pictures of one task + Mila's wish → {ideas: [{title, description, tags, text}]}."""
+    paths = [tasks.resolve(i) for i in images]
+    folder = paths[0].parent
+    if any(p.parent != folder for p in paths):
+        raise ValueError("Картинки должны быть из одной задачи")
+    files = ", ".join(p.name for p in paths)
+    result, info = await run_claude(
+        _render("brainstorm.md", files=files, count=count, wish=(wish or "").strip() or "—"),
+        folder, ["Read"], timeout=300)
+    try:
+        data = _json_answer(result)
+    except ValueError:
+        raise RuntimeError("Claude ответил не в том формате, попробуйте ещё раз")
+    ideas = []
+    for idea in data.get("ideas") or []:
+        if not isinstance(idea, dict):
+            continue
+        clean = {k: str(idea.get(k) or "").strip() for k in ("title", "description", "tags", "text")}
+        if clean["tags"] and clean["text"]:
+            ideas.append(clean)
+    if not ideas:
+        raise RuntimeError("Claude не вернул идей, попробуйте ещё раз")
+    return {"ideas": ideas[:count], **info}

@@ -26,7 +26,9 @@ from .comfy import ComfyError
 log = logging.getLogger("mila.jobs")
 
 DEFAULT_PER_MP = 30.0  # s per megapixel when there is no history at all
-MODE_FACTOR = {"text": 1.0, "img2img": 0.7, "edit": 3.0}  # vs text, until there is history
+# vs text, until there is history; "+hires" is per megapixel of the final (enlarged) picture
+MODE_FACTOR = {"text": 1.0, "img2img": 0.7, "edit": 3.0, "text+hires": 1.4, "img2img+hires": 1.3}
+MAX_HIRES_MP = 6.0  # 2048×2688 ≈ 5.5 MP passes on 8 GB with the tiled VAE
 DEFAULT_LOAD = 15.0
 DECODE = 1.5
 KEEP_FINISHED = 30
@@ -59,7 +61,7 @@ class Stats:
         for path in config.TASKS.glob("*/*.json"):
             e = tasks.read_json(path) or {}
             if e.get("type") == "generated":
-                self.add(e.get("model"), e.get("mode", "text"), e)
+                self.add(e.get("model"), stat_mode(e.get("mode", "text"), e.get("settings")), e)
 
     def add(self, model, mode, e):
         try:
@@ -84,6 +86,11 @@ class Stats:
             return DEFAULT_LOAD
         # Warm-ups draw a small 512² picture: subtract it.
         return max(3.0, statistics.median(values[-20:]) - self.image_seconds(model, "text", 0.26))
+
+
+def stat_mode(mode, settings):
+    """Speed statistics keep pictures with a hires pass apart."""
+    return mode + "+hires" if (settings or {}).get("hires") else mode
 
 
 @dataclass
@@ -112,10 +119,19 @@ class Job:
     first_step: int = 0
     first_step_time: float = 0.0
     cancel: bool = False
+    hires_scale: float = 0.0
+    hires_steps: int = 0
 
     @property
     def mp(self):
-        return self.width * self.height / 1e6 if self.width and self.height else 1.0
+        """Megapixels of the result (after the hires pass, if any)."""
+        if not (self.width and self.height):
+            return 1.0
+        return self.width * self.height * (self.hires_scale or 1.0) ** 2 / 1e6
+
+    @property
+    def stat_mode(self):
+        return self.mode + "+hires" if self.hires_scale else self.mode
 
 
 def _number(settings, key, kind, low, high, default=None):
@@ -139,7 +155,10 @@ class Jobs:
     # --- queue --------------------------------------------------------------------------------
 
     def submit(self, task, form):
-        """form: {model, images: [file], preset, white_bg, prompt, negative, settings}."""
+        """form: {model, images: [file], preset, white_bg, prompt, negative, settings, idea?}.
+
+        idea — a brainstorm idea drawn from text: {batch, n, title, description, source photo}.
+        """
         models = catalog.models()
         model = models.get(form.get("model"))
         if not model:
@@ -190,16 +209,39 @@ class Jobs:
             "loras": [{"file": l["file"], "strength": float(l["strength"])}
                       for l in settings.get("loras", []) if l.get("file")],
         }
+        hires = None
+        raw = settings.get("hires")
+        if isinstance(raw, dict) and raw.get("on", True) and model["family"] != "flux"                 and mode in ("text", "img2img"):
+            hires = {"scale": _number(raw, "scale", float, 1.1, 2.0, 1.5),
+                     "denoise": _number(raw, "denoise", float, 0.1, 0.9, 0.5),
+                     "steps": _number(raw, "steps", int, 1, 60, 20),
+                     "cfg": _number(raw, "cfg", float, 0, 30)}
+            if width * height * hires["scale"] ** 2 / 1e6 > MAX_HIRES_MP:
+                raise ValueError(f"Hires fix: итог больше {MAX_HIRES_MP:g} Мп — уменьшите размер "
+                                 "или увеличение (на 8 ГБ не поместится)")
+        clean["hires"] = hires
         count = _number(settings, "count", int, 1, 4, 1)
         seed = settings.get("seed")
         seed = random.randint(0, 2**31 - 1) if seed in (None, "") else int(seed)
+        idea = None
+        if isinstance(form.get("idea"), dict):  # one idea of a brainstorm drawn in one model
+            raw = form["idea"]
+            source = raw.get("source") or None
+            if source:
+                tasks.meta_path(source)
+            idea = {"batch": str(raw.get("batch") or "")[:24], "n": int(raw.get("n") or 0),
+                    "title": str(raw.get("title") or "")[:120],
+                    "description": str(raw.get("description") or "")[:600], "source": source}
         job = Job(id=uuid.uuid4().hex[:10], task_id=task["id"], task_title=task["title"],
                   model=form["model"], mode=mode, width=width, height=height,
                   seeds=[seed + i for i in range(count)],
+                  hires_scale=hires["scale"] if hires else 0.0,
+                  hires_steps=hires["steps"] if hires else 0,
                   form={"images": images, "preset": (preset or {}).get("id"),
                         "white_bg": bool(form.get("white_bg")),
                         "prompt": (form.get("prompt") or "").strip(),
-                        "negative": (form.get("negative") or "").strip(), "settings": clean})
+                        "negative": (form.get("negative") or "").strip(), "settings": clean,
+                        "idea": idea})
         self.jobs.append(job)
         self.wake.set()
         return job
@@ -260,6 +302,7 @@ class Jobs:
                                               form["negative"], loras, settings["quality"])
         overrides = {k: settings[k] for k in ("steps", "cfg", "sampler", "scheduler")
                      if settings.get(k) not in (None, "")}
+        upscalers = await self.comfy.list_models("upscale_models") if settings.get("hires") else []
 
         for seed in job.seeds:
             if job.cancel:
@@ -268,7 +311,8 @@ class Jobs:
                 model, positive, negative, seed, job.width, job.height, loras,
                 init_image=names[0] if job.mode == "img2img" else None,
                 denoise=settings["denoise"], overrides=overrides,
-                references=names if job.mode == "edit" else ())
+                references=names if job.mode == "edit" else (),
+                hires=settings.get("hires"), upscalers=upscalers)
             job.loading = self.loaded_model != job.model
             job.step = job.steps = job.first_step = 0
             job.first_step_time = 0.0
@@ -291,10 +335,12 @@ class Jobs:
                 "loaded_model": job.loading, "positive_final": positive,
                 "negative_final": negative, "machine": "msi", "payload": graph,
             }
+            if form.get("idea"):
+                record["idea"] = form["idea"]
             rel = tasks.save_generated(job.task_id, f"{job.model}_{seed}.png", png, record)
             job.images.append(rel)
             job.done += 1
-            self.stats.add(job.model, job.mode, record)
+            self.stats.add(job.model, job.stat_mode, record)
 
         job.finished = time.time()
         job.status, job.stage = ("cancelled", "Отменено") if job.cancel else ("done", "Готово")
@@ -310,11 +356,12 @@ class Jobs:
                     finished.set()
                 else:
                     job.stage = graphs.stage(node) or job.stage
-            elif kind == "progress" and data.get("node") == "sample":
+            elif kind == "progress" and data.get("node") in ("sample", "hires"):
                 job.step, job.steps = int(data["value"]), int(data["max"])
                 if not job.first_step_time:
                     job.first_step, job.first_step_time = job.step, time.time()
-                job.stage = f"Рисую: шаг {job.step} из {job.steps}"
+                job.stage = (f"Рисую: шаг {job.step} из {job.steps}" if data["node"] == "sample"
+                             else f"Детали: шаг {job.step} из {job.steps}")
             elif kind == "execution_error":
                 result["error"] = data.get("exception_message", "ошибка ComfyUI").strip()
                 finished.set()
@@ -360,7 +407,7 @@ class Jobs:
 
     def remaining(self, job, now=None):
         now = now or time.time()
-        per = self.stats.image_seconds(job.model, job.mode, job.mp)
+        per = self.stats.image_seconds(job.model, job.stat_mode, job.mp)
         total = len(job.seeds)
         if job.status == "queued":
             loaded = self.loaded_model == job.model
@@ -368,7 +415,8 @@ class Jobs:
         if job.status != "running":
             return 0.0
         elapsed = now - job.picture_started
-        if job.first_step_time and job.step > job.first_step and job.steps:
+        # With a hires pass the step speed of the first pass says little about the whole.
+        if job.first_step_time and job.step > job.first_step and job.steps and not job.hires_scale:
             rate = (now - job.first_step_time) / (job.step - job.first_step)
             current = (job.steps - job.step) * rate + DECODE
         else:

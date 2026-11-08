@@ -1,5 +1,5 @@
 {
-  "_doc": "Pre-prompts of Mila Draw AI. kinds: what to draw without a picture. actions: what to do with attached pictures. tags go to tag models (illustrious, anima), text to FLUX; <ref_image_0>, <ref_image_1>... are the attached pictures in FLUX edit mode. negative: only for models where the negative works. denoise: how much img2img changes the first picture (tag models). references: the action needs a model that takes reference images. model: the model the page switches to when the action is chosen (the user can change it). size: key of sizes; for actions without size the result keeps the picture's proportions. The page shows what each preset adds. No project or story context here.",
+  "_doc": "Pre-prompts of Mila Draw AI. kinds: what to draw without a picture. actions: what to do with attached pictures. tags go to tag models (illustrious, anima), text to FLUX; <ref_image_0>, <ref_image_1>... are the attached pictures in FLUX edit mode. negative: only for models where the negative works. denoise: how much img2img changes the first picture (tag models). references: the action needs a model that takes reference images. description: what the preset does, shown on the page. model: the model the page switches to when the action is chosen (the user can change it). size: key of sizes; for actions without size the result keeps the picture's proportions. The page shows what each preset adds. No project or story context here.",
   "sizes": {
     "portrait": {
       "title": "9:16",
@@ -36,6 +36,7 @@
     {
       "id": "character",
       "title": "Персонаж",
+      "description": "Один персонаж в полный рост, вертикальный кадр 9:16. Можно на белом фоне — удобно как референс и для дальнейшей отрисовки.",
       "size": "portrait",
       "white_bg": true,
       "tags": "solo, full body",
@@ -44,6 +45,7 @@
     {
       "id": "background",
       "title": "Фон",
+      "description": "Пейзаж или интерьер без людей, горизонтальный кадр 16:9.",
       "size": "landscape",
       "tags": "no humans, scenery",
       "text": "A scenery illustration with no people."
@@ -51,6 +53,7 @@
     {
       "id": "other",
       "title": "Другое",
+      "description": "Ничего не добавляется — только ваш промпт. Квадрат 1:1.",
       "size": "square",
       "tags": "",
       "text": ""
@@ -60,6 +63,7 @@
     {
       "id": "clean-sketch",
       "title": "Чистовой скетч",
+      "description": "Берёт черновой ч/б набросок и перерисовывает его как чистый законченный скетч: уверенные линии, поправленная анатомия и пропорции. Поза и дизайн те же, результат остаётся ч/б.",
       "model": "flux3-klein",
       "tags": "sketch, monochrome, greyscale, lineart, clean lines",
       "text": "Redraw the rough sketch from <ref_image_0> as a clean, finished sketch: confident clean lines, refined details, corrected anatomy and proportions. Keep the same pose, composition and character design. Monochrome pencil lines on white paper.",
@@ -69,6 +73,7 @@
     {
       "id": "colorize",
       "title": "Раскрасить",
+      "description": "Берёт лайнарт или чистовой скетч и раскрашивает: цвет и мягкие тени. Линии, поза и дизайн остаются как есть. Какие цвета — можно написать в промпте.",
       "model": "flux3-klein",
       "tags": "full color, colorful, cel shading",
       "text": "Color the line art from <ref_image_0>: turn it into a finished full-color illustration with clean lineart, flat colors and soft cel shading. Keep the exact pose, character design and every detail of the drawing.",
@@ -77,39 +82,33 @@
     },
     {
       "id": "finish",
-      "title": "Закончить иллюстрацию",
+      "title": "Улучшить иллюстрацию",
+      "description": "Берёт цветной скетч или незаконченную иллюстрацию и доводит до готовой: чистит лайнарт, поправляет анатомию и ошибки, прорабатывает детали, свет и тени. Меняет заметно, но композиция, цвета и дизайн те же.",
       "model": "flux3-klein",
-      "tags": "detailed, cel shading, clean lines",
-      "text": "Finish the colored sketch from <ref_image_0> into a complete illustration: clean lineart, refined details, full shading and lighting. Keep the same pose, composition, colors and character design.",
+      "tags": "detailed, cel shading, clean lines, detailed shading",
+      "text": "Turn the unfinished illustration from <ref_image_0> into a complete, improved illustration: clean confident lineart, fixed anatomy and proportions, refined details on face, hair and clothes, full shading and lighting. Keep the same pose, composition, colors and character design.",
       "negative": "sketch, rough lines, flat color, bad anatomy",
-      "denoise": 0.5
+      "denoise": 0.6
     },
     {
       "id": "render",
-      "title": "Добавить рендер",
+      "title": "Полировка",
+      "description": "Берёт почти готовую иллюстрацию и только полирует: мягкие переходы теней, блики, рефлексы, контровой свет, чистые края. Ничего не перерисовывает — правки едва заметные.",
       "model": "flux3-klein",
-      "tags": "highly detailed, shiny, rim lighting, sparkle, light particles",
-      "text": "Polish the illustration from <ref_image_0>: richer rendering, glossy highlights, rim light, small decorative details and sparkles. Keep the same composition, character and colors.",
+      "tags": "highly detailed, glossy, rim lighting, soft shading",
+      "text": "Polish <ref_image_0> without redrawing it: keep every line, shape, face, color and the composition exactly the same. Only refine the rendering: smoother shading transitions, glossy highlights, subtle rim light and reflected light, crisp clean edges.",
       "negative": "blurry, bad anatomy",
-      "denoise": 0.35
-    },
-    {
-      "id": "from-refs",
-      "title": "Персонаж по референсам",
-      "model": "flux3-klein",
-      "references": true,
-      "size": "portrait",
-      "white_bg": true,
-      "text": "Create one original anime-style character that combines the key features of the reference images: appearance, outfit, colors and details. Full body, standing."
+      "denoise": 0.3
     },
     {
       "id": "from-photo",
       "title": "Дизайн по фото",
+      "description": "Берёт фото — фрукт, животное, вещь — и придумывает по нему персонажа: формы, цвета, материалы и настроение переходят во внешность и одежду. «Один вариант» — FLUX смотрит на фото и держится близко к нему; «Мозговой штурм» — много разных идей в разных моделях.",
       "model": "flux3-klein",
       "references": true,
       "size": "portrait",
       "white_bg": true,
-      "text": "Design an original anime-style character inspired by the reference photo <ref_image_0>: carry its shapes, colors, materials and mood into the character's look. Full body character design."
+      "text": "Design an original full-body anime-style character inspired by the photo <ref_image_0>. Do not copy the photo: it is only inspiration. Carry its shapes, colors, materials and mood into the character's hair, outfit and accessories. Full body character design."
     }
   ]
 }

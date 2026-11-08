@@ -179,18 +179,61 @@ async def describe(data: dict = Body(...)):
     return {"status": "pending"}
 
 
-@app.post("/api/prompt-help")
-async def prompt_help(data: dict = Body(...)):
+def _pictures(files):
+    """Attached pictures: checked paths and Claude's descriptions of them."""
+    result = []
+    for f in list(files or [])[:4]:
+        try:
+            analysis = tasks.get_meta(f).get("analysis") or {}
+        except (PermissionError, FileNotFoundError):
+            raise HTTPException(400, "Прикреплённая картинка не найдена")
+        result.append({k: analysis.get(k, "") for k in ("description", "tags", "medium")})
+    return result
+
+
+@app.post("/api/assistant")
+async def assistant(data: dict = Body(...)):
+    """AI helper: Mila's words → prompt, negative, settings to change, a tip."""
     if not claude.available():
         raise HTTPException(503, "Claude не установлен на этой машине")
-    text = (data.get("text") or "").strip()
-    if not text:
-        raise HTTPException(400, "Напишите, что нарисовать")
-    model = catalog.models().get(data.get("model"))
+    wish = (data.get("wish") or "").strip()
+    if not wish:
+        raise HTTPException(400, "Напишите, что хотите получить")
+    key = data.get("model")
+    model = catalog.models().get(key)
     if not model:
         raise HTTPException(400, "Неизвестная модель")
+    pictures = _pictures(data.get("images"))
+    mode = "text" if not pictures else "edit" if model.get("references") else "img2img"
     try:
-        return await claude.prompt_help(text, model, int(data.get("images") or 0))
+        preset = catalog.find_preset(data.get("preset"))
+    except ValueError:
+        preset = None
+    settings = {k: v for k, v in (data.get("settings") or {}).items()
+                if k in ("steps", "cfg", "denoise", "count")}
+    try:
+        return await claude.assistant(wish, key, model, mode, pictures, preset, settings)
+    except RuntimeError as e:
+        raise HTTPException(502, f"Claude: {e}")
+
+
+@app.post("/api/brainstorm")
+async def brainstorm(data: dict = Body(...)):
+    """Photo → several different character ideas (the page then draws them in chosen models)."""
+    if not claude.available():
+        raise HTTPException(503, "Claude не установлен на этой машине")
+    task = _task(data.get("task_id", ""))
+    images = list(data.get("images") or [])[:4]
+    if not images:
+        raise HTTPException(400, "Прикрепите фото")
+    own = {i["file"] for i in task["items"]}
+    if any(i not in own for i in images):
+        raise HTTPException(400, "Картинка не из этой задачи")
+    try:
+        count = max(2, min(int(data.get("count") or 4), 8))
+        return await claude.brainstorm(images, data.get("wish", ""), count)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except RuntimeError as e:
         raise HTTPException(502, f"Claude: {e}")
 
