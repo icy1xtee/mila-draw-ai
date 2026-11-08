@@ -475,3 +475,22 @@ dialog::backdrop { background: rgb(0 0 0 / 55%); }
 .hires input[type="number"] { width: 100%; }
 .prompt-tools .import-note { flex-basis: 100%; }
 #import textarea { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.85rem; }
+
+/* --- LoRA block ---------------------------------------------------------------------------- */
+.label-row { gap: 8px; }
+.lora-group { display: grid; gap: 6px; }
+.lora-kind { margin-top: 4px; }
+.lora-card { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.lora-card.on { border-color: var(--accent); background: var(--accent-soft); }
+.lora-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lora-head .check { min-height: 32px; }
+.lora-controls { display: grid; gap: 6px; padding-top: 4px; }
+.lora-controls code, .lora-details code { overflow-wrap: anywhere; }
+.lora-variant { display: grid; gap: 4px; }
+.lora-details { display: grid; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.lora-details ul { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+.muted-pill { background: var(--panel-2); color: var(--muted); font-weight: 500; }
+.hires label.small select { width: 100%; }
+.composer > *, .block > *, .lora-group > *, .lora-card > * { min-width: 0; }
+.lora-card, .lora-details p, .lora-details li, .lora-controls p { overflow-wrap: anywhere; }
+.lora-controls .link { text-align: left; }

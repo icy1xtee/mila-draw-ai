@@ -9,7 +9,7 @@ Hires fix (tag models, as in A1111/Forge): the picture is drawn, enlarged by an 
 pass adds the detail. Big pictures go through the tiled VAE (8 GB of VRAM).
 """
 
-UPSCALER = "RealESRGAN_x4plus_anime_6B.pth"  # models/upscale_models/; the same as on Civitai
+UPSCALER = "RealESRGAN_x4plus_anime_6B.pth"  # default; models/upscale_models/, as on Civitai
 
 
 def _text(clip, value):
@@ -32,7 +32,7 @@ def _loaders(g, model, params, loras, width, height, shift):
             "clip": clip_ref, "stop_at_clip_layer": -params.get("clip_skip", 1)}}
         return model_ref, ["skip", 0], vae_ref
 
-    clip_type = {"anima": "stable_diffusion", "flux": "flux3"}[family]
+    clip_type = {"anima": "stable_diffusion", "flux": "flux3", "krea2": "krea2"}[family]
     g["unet"] = {"class_type": "UNETLoader",
                  "inputs": {"unet_name": files["unet"], "weight_dtype": "default"}}
     g["clip"] = {"class_type": "CLIPLoader", "inputs": {
@@ -114,8 +114,9 @@ def build(model, positive, negative, seed, width=None, height=None, loras=(), in
     image_ref = ["decode", 0]
     if hires and not edit and width and height:
         w, h = hires_size(width, height, hires["scale"])
-        if UPSCALER in upscalers:
-            g["up_model"] = {"class_type": "UpscaleModelLoader", "inputs": {"model_name": UPSCALER}}
+        upscaler = hires.get("upscaler") if hires.get("upscaler") in upscalers else UPSCALER
+        if upscaler in upscalers:
+            g["up_model"] = {"class_type": "UpscaleModelLoader", "inputs": {"model_name": upscaler}}
             g["up"] = {"class_type": "ImageUpscaleWithModel",
                        "inputs": {"upscale_model": ["up_model", 0], "image": image_ref}}
             image_ref = ["up", 0]

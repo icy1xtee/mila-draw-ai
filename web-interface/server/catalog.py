@@ -18,6 +18,14 @@ def models():
     return _read(config.MODELS)["models"]
 
 
+TAG_FAMILIES = ("illustrious", "anima")
+
+
+def is_tag_model(model):
+    """Danbooru tags (Illustrious, Anima) or plain sentences (FLUX, Krea 2)."""
+    return model.get("prompt", "tags" if model["family"] in TAG_FAMILIES else "text") == "tags"
+
+
 def presets():
     return _read(config.PRESETS)
 
@@ -33,25 +41,48 @@ def find_preset(preset_id):
     raise ValueError("Неизвестная заготовка")
 
 
+FAMILIES = ("illustrious", "anima", "krea2", "flux")
+
+
 def lora_entries(files):
-    """LoRA files that ComfyUI sees, with titles and trigger words from loras.json."""
+    """LoRA files that ComfyUI sees, with everything loras.json says about them.
+
+    A file without an entry still shows: family from its folder (loras/<family>/...), title
+    from the file name, "no description".
+    """
     described = {e["file"]: e for e in _read(config.LORAS).get("loras", [])}
     result = []
     for name in files:
         key = name.replace("\\", "/")
         entry = described.get(key) or described.get(name) or {}
+        folder = key.split("/")[0] if "/" in key else None
         result.append({
+            **entry,
             "file": name,
             "title": entry.get("title") or PurePosixPath(key).stem,
-            "family": entry.get("family"),
+            "family": entry.get("family") or (folder if folder in FAMILIES else None),
+            "kind": entry.get("kind", "other"),
             "trigger": entry.get("trigger", ""),
+            "variants": entry.get("variants", []),
+            "words": entry.get("words", []),
             "strength": entry.get("strength", 0.8),
             "range": entry.get("range", [0, 1.5]),
+            "described": bool(entry),
         })
     return result
 
 
-def public(lora_files, samplers, schedulers):
+def lora_trigger(entry, variant=None):
+    """Words a LoRA adds to the prompt: its trigger plus the chosen variant (if it is one of its)."""
+    words = [entry.get("trigger", "")]
+    if variant and any(v["word"] == variant for v in entry.get("variants", [])):
+        words.append(variant)
+    elif entry.get("variants"):
+        words.append(entry["variants"][0]["word"])
+    return ", ".join(w for w in words if w)
+
+
+def public(lora_files, samplers, schedulers, upscalers=()):
     """What the page needs to build the form."""
     p = presets()
     return {
@@ -60,7 +91,7 @@ def public(lora_files, samplers, schedulers):
                 "key": key,
                 "title": m.get("title", key),
                 "family": m["family"],
-                "tags": m["family"] != "flux",
+                "tags": is_tag_model(m),
                 "negative_works": m.get("negative_works", True),
                 "references": m.get("references", False),
                 "params": m["params"],
@@ -79,6 +110,7 @@ def public(lora_files, samplers, schedulers):
         "loras": lora_entries(lora_files),
         "samplers": samplers,
         "schedulers": schedulers,
+        "upscalers": list(upscalers),
         "help": _read(config.HELP) if config.HELP.exists() else {},
     }
 
@@ -121,7 +153,7 @@ def assemble(model, preset, white_bg, prompt, negative, loras=(), quality=True):
     A tag that ends up in the positive is dropped from the negative (e.g. "sketch" in
     WAI's negative when the preset asks for a sketch).
     """
-    tags = model["family"] != "flux"
+    tags = is_tag_model(model)
     key = "tags" if tags else "text"
     if tags:  # prompts copied from Civitai (A1111/Forge) use [x] for weaker words
         prompt, negative = a1111_weights(prompt), a1111_weights(negative)

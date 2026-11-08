@@ -1,5 +1,5 @@
 {
-  "_doc": "Models on MSI's ComfyUI. Read by msi/scripts/comfy_generate.py and the web-interface (Mila Draw AI). Order = order in the web-interface. references: the model takes reference images (FLUX edit graph, settings in edit_params).",
+  "_doc": "Models on MSI's ComfyUI. prompt: tags (Danbooru tags: illustrious, anima) or text (sentences: flux, krea2); by default from the family. Read by msi/scripts/comfy_generate.py and the web-interface (Mila Draw AI). Order = order in the web-interface. references: the model takes reference images (FLUX edit graph, settings in edit_params).",
   "models": {
     "anima-aesthetic": {
       "name": "Anima Aesthetic v1.1 (bf16)",
@@ -65,6 +65,26 @@
       "edit_note": "edit graph = official template image_flux3_klein_distilled_image_edit.json: ReferenceMultiLatent (1 MP), no ModelSamplingFlux, references <ref_image_0>, <ref_image_1>... in the prompt",
       "edit_params": {
         "steps": 16,
+        "cfg": 1,
+        "sampler": "euler",
+        "scheduler": "simple"
+      }
+    },
+    "krea2-turbo": {
+      "name": "Krea 2 Turbo 12B (INT8 convrot)",
+      "title": "Krea 2 Turbo",
+      "family": "krea2",
+      "prompt": "text",
+      "source": "https://huggingface.co/Comfy-Org/Krea-2 (diffusion_models/krea2_turbo_int8_convrot.safetensors, sha256 8e4eeda70dd5…); settings: ComfyUI template «Text to Image (Krea-2 Turbo)»",
+      "note": "8-step distilled, guidance baked in: CFG 1, negative does not work. Text encoder and VAE are the same files as FLUX 3 Klein / Anima (hashes checked). 12B does not fit 8 GB VRAM: ComfyUI offloads part to RAM. License: Krea 2 Community License, commercial use via opensource@krea.ai",
+      "negative_works": false,
+      "files": {
+        "unet": "krea2_turbo_int8_convrot.safetensors",
+        "clip": "qwen3vl_4b_int8_convrot.safetensors",
+        "vae": "qwen_image_vae.safetensors"
+      },
+      "params": {
+        "steps": 8,
         "cfg": 1,
         "sampler": "euler",
         "scheduler": "simple"

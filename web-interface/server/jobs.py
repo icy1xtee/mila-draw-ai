@@ -206,13 +206,15 @@ class Jobs:
             "denoise": _number(settings, "denoise", float, 0.05, 1.0,
                                (preset or {}).get("denoise", 0.6)),
             "quality": settings.get("quality", True) is not False,
-            "loras": [{"file": l["file"], "strength": float(l["strength"])}
+            "loras": [{"file": l["file"], "strength": float(l["strength"]),
+                       **({"variant": str(l["variant"])} if l.get("variant") else {})}
                       for l in settings.get("loras", []) if l.get("file")],
         }
         hires = None
         raw = settings.get("hires")
-        if isinstance(raw, dict) and raw.get("on", True) and model["family"] != "flux"                 and mode in ("text", "img2img"):
-            hires = {"scale": _number(raw, "scale", float, 1.1, 2.0, 1.5),
+        if isinstance(raw, dict) and raw.get("on", True) and catalog.is_tag_model(model)                 and mode in ("text", "img2img"):
+            hires = {"upscaler": str(raw.get("upscaler") or ""),
+                     "scale": _number(raw, "scale", float, 1.1, 2.0, 1.5),
                      "denoise": _number(raw, "denoise", float, 0.1, 0.9, 0.5),
                      "steps": _number(raw, "steps", int, 1, 60, 20),
                      "cfg": _number(raw, "cfg", float, 0, 30)}
@@ -296,7 +298,7 @@ class Jobs:
             names.append(await self.comfy.upload(src.read_bytes(), f"{job.id}-{src.name}"))
 
         lora_info = {l["file"]: l for l in catalog.lora_entries([l["file"] for l in settings["loras"]])}
-        loras = [{**l, "trigger": lora_info.get(l["file"], {}).get("trigger", "")}
+        loras = [{**l, "trigger": catalog.lora_trigger(lora_info.get(l["file"], {}), l.get("variant"))}
                  for l in settings["loras"]]
         positive, negative = catalog.assemble(model, preset, form["white_bg"], form["prompt"],
                                               form["negative"], loras, settings["quality"])

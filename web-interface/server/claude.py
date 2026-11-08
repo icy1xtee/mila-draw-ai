@@ -18,7 +18,7 @@ import logging
 import shutil
 import time
 
-from . import config, tasks
+from . import catalog, config, tasks
 
 log = logging.getLogger("mila.claude")
 
@@ -210,7 +210,7 @@ async def assistant(wish, key, model, mode, pictures, preset, settings):
     pictures: [{description, tags, medium}] of the attached pictures (Claude's descriptions);
     preset: the chosen preset or None; settings: what is set now ({steps, cfg, denoise, count}).
     """
-    tag_model = model["family"] != "flux"
+    tag_model = catalog.is_tag_model(model)
     fmt = FORMATS["tags" if tag_model else "flux"]
     if pictures:
         lines = []

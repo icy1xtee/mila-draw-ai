@@ -83,7 +83,8 @@ async def login(data: dict = Body(...)):
 @app.get("/api/catalog")
 async def get_catalog():
     samplers, schedulers = await comfy.sampler_options()
-    return {**catalog.public(await comfy.list_models("loras"), samplers, schedulers),
+    return {**catalog.public(await comfy.list_models("loras"), samplers, schedulers,
+                             await comfy.list_models("upscale_models")),
             "claude": claude.available()}
 
 

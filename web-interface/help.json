@@ -1,5 +1,5 @@
 {
-  "_doc": "Help texts of Mila Draw AI. families: the «?» window next to the model choice, by model family; text = without a picture, picture = with attached pictures. Each section: how (one line), write (how to write the prompt), example, negative (optional). models: extra lines for one model (speed, quirks). settings: explanations under each field of the settings window; text = what the setting does, models = the line for one model (defaults come from msi/catalog/models.json: official workflows and model cards). The AI helper reads these too. Plain Russian, no project or story context.",
+  "_doc": "Help texts of Mila Draw AI. families: the «?» window next to the model choice, by model family (flux, anima, illustrious, krea2); text = without a picture, picture = with attached pictures. Each section: how (one line), write (how to write the prompt), example, negative (optional). models: extra lines for one model (speed, quirks). settings: explanations under each field of the settings window; text = what the setting does, models = the line for one model (defaults come from msi/catalog/models.json: official workflows and model cards). The AI helper reads these too. Plain Russian, no project or story context.",
   "families": {
     "flux": {
       "text": {
@@ -72,13 +72,51 @@
         "example": "full color, cel shading, solo, furry, black fur, red electric guitar, spiked collar, white background",
         "negative": "Работает. Для этюдов ню выключите «Теги качества»: в стандартном негативе есть nsfw и censor."
       }
+    },
+    "krea2": {
+      "text": {
+        "how": "Рисует по описанию обычными фразами; сильна в атмосфере, свете и «ощущении» картинки.",
+        "write": [
+          "Пишите по-английски обычными предложениями: кто или что, как выглядит, что делает, где, какой свет и стиль. Стиль лучше назвать явно: anime illustration, watercolor, oil painting.",
+          "Главное — в начало. Теги Danbooru понимает хуже, чем фразы.",
+          "Не пишите «без X» — лучше опишите, что должно быть вместо.",
+          "Можно написать по-русски в поле «ИИ-помощник» — он заполнит промпт сам.",
+          "У Krea 2 много своих LoRA — блок «LoRA» под выбором модели: аниме-линии, лист дизайна персонажа, плёнка."
+        ],
+        "example": "Anime-style illustration of a girl with short silver hair in an oversized yellow raincoat standing on a rooftop at dusk, holding a paper umbrella, soft warm light, clean lineart.",
+        "negative": "Не работает (CFG 1). Чего не нужно, просто не пишите."
+      },
+      "picture": {
+        "how": "Перерисовывает первую прикреплённую картинку (img2img), остальные не видит. Видеть картинки как референсы, как FLUX, не умеет.",
+        "write": [
+          "Промпт описывает весь результат фразами, а не команду.",
+          "«Сила изменений» в настройках: 0,3 — лёгкая правка, 0,5 — заметно, 0,7 и выше — почти новая картинка.",
+          "Для правок рисунка по инструкции лучше FLUX 3 Klein."
+        ],
+        "example": "Anime-style illustration of the same girl in full color with soft cel shading, clean lineart, warm sunset light.",
+        "negative": "Не работает."
+      }
     }
   },
   "models": {
-    "anima-aesthetic": ["≈ 45 с на картинку — медленнее всех, детальнее Turbo."],
-    "anima-turbo": ["≈ 8 с на картинку — быстро прикинуть идею.", "Негатив не работает."],
-    "flux3-klein": ["≈ 10 с без картинки, ≈ 30 с с картинкой."],
-    "wai-illustrious": ["≈ 18 с на картинку. Под неё больше всего готовых LoRA."]
+    "anima-aesthetic": [
+      "≈ 45 с на картинку — медленнее всех, детальнее Turbo."
+    ],
+    "anima-turbo": [
+      "≈ 8 с на картинку — быстро прикинуть идею.",
+      "Негатив не работает."
+    ],
+    "flux3-klein": [
+      "≈ 10 с без картинки, ≈ 30 с с картинкой."
+    ],
+    "wai-illustrious": [
+      "≈ 18 с на картинку. Под неё больше всего готовых LoRA."
+    ],
+    "krea2-turbo": [
+      "≈ 20–30 с на картинку 896×1152 (замер 08.11; 12 млрд параметров не влезают в 8 ГБ, часть модели в оперативке — RAM занята до ≈ 14 из 16 ГБ).",
+      "Негатив не работает.",
+      "Лицензия Krea 2 Community: для коммерции — отдельная договорённость с Krea."
+    ]
   },
   "settings": {
     "count": {
@@ -101,7 +139,8 @@
         "flux3-klein": "Стандарт — 16 (официальный workflow ComfyUI). Модель дистиллирована: меньше — быстрее и проще, больше 20 почти ничего не добавляет.",
         "anima-turbo": "Стандарт — 10. Turbo сделана рисовать за мало шагов (8–12); больше — только дольше.",
         "anima-aesthetic": "Стандарт — 30 (workflow из карточки модели). Меньше 20 — недорисованность.",
-        "wai-illustrious": "Стандарт — 28 (совет автора модели на Civitai). Рабочий диапазон — 20–30."
+        "wai-illustrious": "Стандарт — 28 (совет автора модели на Civitai). Рабочий диапазон — 20–30.",
+        "krea2-turbo": "Стандарт — 8 (официальный шаблон ComfyUI). Turbo дистиллирована под 8 шагов; некоторые LoRA советуют 10."
       }
     },
     "cfg": {
@@ -110,7 +149,8 @@
         "flux3-klein": "Должен быть 1: модель дистиллирована, при большем CFG картинка пережигается. Поэтому и негатив не работает.",
         "anima-turbo": "Должен быть 1: Turbo дистиллирована. Поэтому негатив не работает.",
         "anima-aesthetic": "Стандарт — 4. 3 — мягче и свободнее, 5–6 — строже по промпту и контрастнее.",
-        "wai-illustrious": "Стандарт — 6 (автор советует 5–7). Ниже — мягче и бледнее, выше — жёстче, пересвет."
+        "wai-illustrious": "Стандарт — 6 (автор советует 5–7). Ниже — мягче и бледнее, выше — жёстче, пересвет.",
+        "krea2-turbo": "Должен быть 1: подсказка «вшита» в модель (Turbo). Поэтому и негатив не работает."
       }
     },
     "sampler": {
@@ -119,7 +159,8 @@
         "flux3-klein": "euler — как в официальном workflow.",
         "anima-turbo": "euler — стандарт для Turbo.",
         "anima-aesthetic": "er_sde — из workflow карточки модели.",
-        "wai-illustrious": "euler_ancestral (Euler a) — совет автора. dpmpp_2m — чётче и стабильнее, меньше случайных деталей."
+        "wai-illustrious": "euler_ancestral (Euler a) — совет автора. dpmpp_2m — чётче и стабильнее, меньше случайных деталей.",
+        "krea2-turbo": "euler — как в официальном шаблоне; er_sde советуют некоторые LoRA."
       }
     },
     "scheduler": {
@@ -143,7 +184,7 @@
       }
     },
     "loras": {
-      "text": "Дообучения поверх модели: стиль, персонаж, приём. Сила 0,6–1 — обычно; больше — сильнее эффект, но ломаются анатомия и сама модель. Слово-триггер LoRA добавляется в промпт само."
+      "text": "Дообучения поверх модели: стиль, персонаж, приём. Включаются в блоке «LoRA» под выбором модели — там же что делает каждая, слово-ключ и сила. Сила 0,6–1 — обычно; больше — сильнее эффект, но ломаются анатомия и сама модель."
     }
   }
 }

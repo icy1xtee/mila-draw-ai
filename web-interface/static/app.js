@@ -251,6 +251,11 @@ function hiresDefaults(m) {
   return { on: false, scale: 1.5, denoise: 0.5, steps: Math.max(4, Math.round(m.params.steps * 0.7)), cfg: "" };
 }
 const hiresWorks = (m, md) => m.tags && md !== "edit";
+const DEFAULT_UPSCALER = "RealESRGAN_x4plus_anime_6B.pth";
+const UPSCALER_NOTES = {
+  "RealESRGAN_x4plus_anime_6B.pth": "под аниме: чистые линии, ровные заливки (стандарт)",
+  "4x_foolhardy_Remacri.safetensors": "универсальный: сохраняет фактуру и мелкие детали — ближе к полуреализму",
+};
 
 function hiresSize(w, h, scale) {
   return { w: Math.round((w * scale) / 8) * 8, h: Math.round((h * scale) / 8) * 8 };
@@ -333,11 +338,12 @@ async function openTask(id) {
     field("Пожелание", ui.bsWish),
     ui.bsOut);
 
+  ui.loras = h("section", { class: "block loras-block" });
   ui.jobs = h("div", { class: "task-jobs" });
   ui.history = h("div", { class: "history" });
 
   const composer = h("div", { class: "composer card" },
-    ui.attach, ui.presets, ui.brainstorm, ui.model, ui.assistant, ui.promptBlock, ui.submit);
+    ui.attach, ui.presets, ui.brainstorm, ui.model, ui.loras, ui.assistant, ui.promptBlock, ui.submit);
 
   render(h("div", { class: "page task" },
     h("div", { class: "task-head" },
@@ -411,13 +417,14 @@ function refreshComposer() {
   const bs = isBrainstorm();
   const ui = S.ui;
   ui.brainstorm.classList.toggle("hidden", !bs);
-  for (const el of [ui.model, ui.promptBlock, ui.submit]) el.classList.toggle("hidden", bs);
+  for (const el of [ui.model, ui.loras, ui.promptBlock, ui.submit]) el.classList.toggle("hidden", bs);
   ui.assistant.classList.toggle("hidden", bs || !S.catalog.claude);
   if (bs) {
     renderBrainstorm();
     return;
   }
   renderModel();
+  renderLoras();
   renderAssistant();
   renderPromptTools();
   const m = model();
@@ -699,6 +706,136 @@ function renderModel() {
       h("button", { class: "btn", onclick: openSettings }, "Настройки")),
     h("p", { class: "small muted settings-line" }, parts.join(" · ")),
     note && h("p", { class: "small warn" }, note));
+}
+
+// --- LoRA -----------------------------------------------------------------------------------
+// The catalog (msi/catalog/loras.json) says what each LoRA does, its trigger, variants, optional
+// words, strength and the author's settings. State per model: settings:<model>.loras =
+// [{file, on, strength, variant}].
+
+const LORA_KINDS = [
+  ["style", "Стиль", "меняет манеру рисунка; две стилевые вместе дают кашу"],
+  ["concept", "Приём", "особый вид картинки"],
+  ["clothes", "Одежда", "конкретный наряд"],
+  ["effect", "Эффект", "свет, плёнка, материал"],
+  ["detail", "Детали", "больше мелочей, стиль почти не трогают"],
+  ["quality", "Качество", "общая эстетика картинки"],
+  ["service", "Служебные", "нужны редко"],
+  ["other", "Без описания", "файл есть, описания нет — пришлите ссылку на Civitai"],
+];
+S.loraOpen = new Set();
+const num = (x) => String(x).replace(".", ",");
+
+// LoRA of the model's family; files of unknown family go with every model, marked.
+const lorasFor = (m) => S.catalog.loras.filter((l) => !l.family || l.family === m.family);
+
+function loraState(m, file) {
+  return ((store.get("settings:" + m.key, {}).loras) || []).find((x) => x.file === file);
+}
+
+function setLora(m, file, patch) {
+  const saved = store.get("settings:" + m.key, {});
+  const list = [...(saved.loras || [])];
+  const i = list.findIndex((x) => x.file === file);
+  const l = S.catalog.loras.find((x) => x.file === file) || {};
+  const next = { file, on: false, strength: l.strength ?? 0.8, ...(i >= 0 ? list[i] : {}), ...patch };
+  if (i >= 0) list[i] = next; else list.push(next);
+  store.set("settings:" + m.key, { ...saved, loras: list });
+}
+
+function renderLoras() {
+  const ui = S.ui;
+  const m = model();
+  const all = lorasFor(m);
+  ui.loras.classList.toggle("hidden", !all.length || isBrainstorm());
+  if (!all.length) return;
+  const on = all.filter((l) => loraState(m, l.file)?.on);
+  const open = S.lorasShowAll || false;
+  const shown = open ? all : on;
+  const styles = on.filter((l) => l.kind === "style").length;
+  fill(ui.loras,
+    h("div", { class: "row label-row" },
+      h("label", { class: "label" }, "LoRA"),
+      on.length > 0 && h("span", { class: "pill" }, `включено: ${on.length}`),
+      h("span", { class: "spacer" }),
+      h("button", { class: "link", onclick: () => { S.lorasShowAll = !open; renderLoras(); } },
+        open ? "Свернуть" : on.length ? "Изменить" : `Выбрать (${all.length})`)),
+    !open && !on.length && h("p", { class: "small muted" },
+      `Дообучения поверх модели: стиль, детали, одежда, эффект. Для ${m.title} есть ${all.length} — нажмите «Выбрать».`),
+    open && h("p", { class: "small muted" },
+      "Галочка включает LoRA, ползунок — сила (насколько сильно она влияет). Слово-ключ добавится в " +
+      "промпт само. Здесь только LoRA, которые подходят к выбранной модели. «Подробнее» — как " +
+      "пользоваться и чего не делать. Документация — msi/catalog/loras.md."),
+    on.length > 3 && h("p", { class: "small warn" }, "Больше трёх LoRA сразу обычно портят картинку."),
+    styles > 1 && h("p", { class: "small warn" }, "Включено несколько стилевых LoRA — стили смешаются. Обычно оставляют одну."),
+    LORA_KINDS.map(([kind, title, note]) => {
+      const group = shown.filter((l) => (l.kind || "other") === kind);
+      return group.length > 0 && h("div", { class: "lora-group" },
+        open && h("p", { class: "lora-kind" }, h("b", {}, title), h("span", { class: "small muted" }, " — " + note)),
+        group.map((l) => loraCard(m, l)));
+    }));
+}
+
+function loraCard(m, l) {
+  const st = loraState(m, l.file) || { on: false, strength: l.strength };
+  const isOpen = S.loraOpen.has(l.file);
+  const value = h("b", { class: "small" }, num(st.strength));
+  const variant = st.variant || l.variants?.[0]?.word;
+  const adds = [l.trigger, l.variants?.length ? variant : ""].filter(Boolean).join(", ");
+  const lic = l.license || {};
+  const s = l.settings || {};
+  const settingsText = [s.sampler && `сэмплер ${s.sampler}`, s.scheduler && `планировщик ${s.scheduler}`,
+    s.cfg != null && `CFG ${s.cfg}`, s.steps && `${s.steps} шагов`].filter(Boolean).join(", ");
+  const toggleOpen = () => { if (isOpen) S.loraOpen.delete(l.file); else S.loraOpen.add(l.file); renderLoras(); };
+  return h("div", { class: "lora-card" + (st.on ? " on" : "") },
+    h("div", { class: "lora-head" },
+      h("label", { class: "check" },
+        h("input", { type: "checkbox", checked: st.on, onchange: (e) => { setLora(m, l.file, { on: e.target.checked }); refreshComposer(); } }),
+        h("b", {}, l.title)),
+      lic.images_commercial === false && h("span", { class: "pill muted-pill", title: "Автор не разрешает продавать картинки: для этюдов, не для ассетов игры" }, "не для продажи"),
+      h("span", { class: "spacer" }),
+      h("button", { class: "link small-link", onclick: toggleOpen }, isOpen ? "Скрыть" : "Подробнее")),
+    h("p", { class: "small muted" }, l.hint || (l.family ? "Описания нет — пришлите ссылку на Civitai." : "Описания нет, и непонятно, к какой модели она подходит.")),
+    st.on && h("div", { class: "lora-controls" },
+      h("div", { class: "row" }, h("span", { class: "small" }, "Сила"),
+        h("input", {
+          type: "range", min: l.range[0], max: l.range[1], step: 0.05, value: st.strength,
+          oninput: (e) => { value.textContent = num(e.target.value); },
+          onchange: (e) => { setLora(m, l.file, { strength: +e.target.value }); },
+        }), value),
+      l.variants?.length > 0 && h("label", { class: "small lora-variant" }, "Вариант",
+        h("select", { onchange: (e) => { setLora(m, l.file, { variant: e.target.value }); renderLoras(); } },
+          l.variants.map((v) => h("option", { value: v.word, selected: v.word === variant }, v.title)))),
+      adds && h("p", { class: "small" }, "В промпт добавится само: ", h("code", {}, adds)),
+      l.words?.length > 0 && h("div", { class: "tags" },
+        h("span", { class: "small muted" }, "по желанию:"),
+        l.words.map((w) => h("button", { class: "tag", title: w.text, onclick: () => addToPrompt(w.text) }, "＋ " + w.title))),
+      settingsText && h("button", {
+        class: "link", title: "Автор этой LoRA советует такие настройки модели",
+        onclick: () => applyLoraSettings(m, l),
+      }, `Поставить настройки автора: ${settingsText}`)),
+    isOpen && h("div", { class: "lora-details small" },
+      (l.how || []).length > 0 && h("div", {}, h("b", {}, "Как использовать"), h("ul", {}, l.how.map((x) => h("li", {}, x)))),
+      (l.avoid || []).length > 0 && h("div", {}, h("b", {}, "Как не надо"), h("ul", {}, l.avoid.map((x) => h("li", {}, x)))),
+      h("p", {}, h("b", {}, "Сила: "), `по умолчанию ${num(l.strength)}, можно ${num(l.range[0])}…${num(l.range[1])}`),
+      l.described !== false && h("p", {}, h("b", {}, "Лицензия: "),
+        lic.images_commercial ? "автор разрешает продавать картинки" : "продавать картинки нельзя — для себя и этюдов",
+        lic.note ? `. ${lic.note}` : ""),
+      h("p", { class: "muted" }, [l.version, l.author && `автор ${l.author}`, l.file].filter(Boolean).join(" · "),
+        l.source && [" · ", h("a", { href: l.source, target: "_blank", rel: "noopener" }, "Civitai")])));
+}
+
+function applyLoraSettings(m, l) {
+  const s = l.settings || {};
+  const next = { ...store.get("settings:" + m.key, {}) };
+  const has = (list, x) => !list.length || list.includes(x);
+  if (s.sampler && has(S.catalog.samplers, s.sampler)) next.sampler = s.sampler;
+  if (s.scheduler && has(S.catalog.schedulers, s.scheduler)) next.scheduler = s.scheduler;
+  if (s.cfg != null) next.cfg = s.cfg;
+  if (s.steps) next.steps = s.steps;
+  store.set("settings:" + m.key, next);
+  toast(`Настройки автора «${l.title}» применены — вернуть: «Сбросить» в окне настроек`, "info");
+  refreshComposer();
 }
 
 // --- prompt: clear, undo --------------------------------------------------------------------
@@ -1216,21 +1353,6 @@ function openSettings() {
   const scheduler = options(S.catalog.schedulers, st.scheduler);
   const seed = h("input", { type: "number", min: 0, placeholder: "случайный", value: d.seed ?? "" });
   const quality = m.tags ? h("input", { type: "checkbox", checked: st.quality !== false }) : null;
-  const loraRows = S.catalog.loras.filter((l) => !l.family || l.family === m.family).map((l) => {
-    const cur = (st.loras || []).find((x) => x.file === l.file);
-    const strength = cur?.strength ?? l.strength;
-    const value = h("span", { class: "small" }, strength);
-    return {
-      l,
-      on: h("input", { type: "checkbox", checked: !!cur?.on }),
-      value,
-      strength: h("input", {
-        type: "range", min: l.range[0], max: l.range[1], step: 0.05, value: strength,
-        oninput: (e) => { value.textContent = e.target.value; },
-      }),
-    };
-  });
-
   // Hires fix block.
   let hiresBox = null, hiresRead = null;
   if (hiresWorks(m, md)) {
@@ -1258,14 +1380,21 @@ function openSettings() {
     });
     const hSteps = h("input", { type: "number", min: 1, max: 60, value: hs.steps });
     const hCfg = h("input", { type: "number", min: 0, max: 30, step: 0.1, value: hs.cfg, placeholder: `как основной (${st.cfg})` });
+    const ups = S.catalog.upscalers || [];
+    const upNote = (f) => UPSCALER_NOTES[f] || "";
+    const upHint = h("span", { class: "small muted" }, upNote(hs.upscaler || DEFAULT_UPSCALER));
+    const upscaler = ups.length > 1 ? h("select", { onchange: (e) => { upHint.textContent = upNote(e.target.value); } },
+      ups.map((f) => h("option", { value: f, selected: f === (hs.upscaler || DEFAULT_UPSCALER) }, f.replace(/\.(pth|safetensors)$/, "")))) : null;
     showFinal();
     hiresRead = () => ({
       on: on.checked, scale, denoise: +dn.value, steps: +hSteps.value || def.steps,
+      upscaler: upscaler ? upscaler.value : hs.upscaler || "",
       cfg: hCfg.value === "" ? "" : +hCfg.value,
     });
     hiresBox = field("Hires fix — второй проход", h("div", { class: "hires" },
       h("label", { class: "check" }, on, "Включить"),
       h("div", { class: "row" }, h("span", { class: "small" }, "Увеличить"), scales, final),
+      upscaler && h("label", { class: "small" }, "Апскейлер", upscaler, upHint),
       h("div", { class: "row" }, h("span", { class: "small" }, "Сила"), dn, dnValue),
       h("div", { class: "grid-2" },
         h("label", { class: "small" }, "Шаги второго прохода", hSteps),
@@ -1279,7 +1408,7 @@ function openSettings() {
         cfg: cfg.value === "" ? base.cfg : +cfg.value,
         sampler: sampler.value, scheduler: scheduler.value,
         quality: quality ? quality.checked : true,
-        loras: loraRows.map((r) => ({ file: r.l.file, on: r.on.checked, strength: +r.strength.value })),
+        loras: store.get("settings:" + m.key, {}).loras || [], // edited in the LoRA block
         hires: hiresRead ? hiresRead() : st.hires,
       });
       d.seed = seed.value;
@@ -1302,8 +1431,7 @@ function openSettings() {
       hiresBox,
       quality && field("Теги качества", h("label", { class: "check" }, quality, "Включены",
         h("span", { class: "small muted" }, ` (${m.prefix.replace(/,\s*$/, "")})`)), "quality"),
-      loraRows.length > 0 && field("LoRA", h("div", { class: "loras" }, loraRows.map((r) =>
-        h("div", { class: "lora" }, h("label", { class: "check" }, r.on, r.l.title), h("div", { class: "row" }, r.strength, r.value)))), "loras")),
+      lorasFor(m).length > 0 && h("p", { class: "small muted" }, "LoRA включаются в блоке «LoRA» под выбором модели.")),
     h("div", { class: "modal-foot row" },
       h("button", {
         class: "link",
@@ -1391,9 +1519,10 @@ function jobSettings(m, md = mode()) {
   return {
     steps: st.steps, cfg: st.cfg, sampler: st.sampler, scheduler: st.scheduler,
     quality: st.quality !== false,
-    loras: (st.loras || []).filter((l) => l.on).map((l) => ({ file: l.file, strength: l.strength })),
+    loras: (st.loras || []).filter((l) => l.on && S.catalog.loras.some((x) => x.file === l.file))
+      .map((l) => ({ file: l.file, strength: l.strength, ...(l.variant ? { variant: l.variant } : {}) })),
     hires: st.hires.on && hiresWorks(m, md)
-      ? { scale: st.hires.scale, denoise: st.hires.denoise, steps: st.hires.steps, cfg: st.hires.cfg === "" ? null : st.hires.cfg }
+      ? { scale: st.hires.scale, denoise: st.hires.denoise, steps: st.hires.steps, cfg: st.hires.cfg === "" ? null : st.hires.cfg, upscaler: st.hires.upscaler || "" }
       : null,
   };
 }

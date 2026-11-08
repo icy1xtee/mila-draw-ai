@@ -82,8 +82,11 @@ Anima, FLUX 3 Klein и утилиты (≈ 40 ГБ), Qwen-Image — нет; по
 | WAI-Illustrious-SDXL v17.0 (NoobAI-XL — по желанию) | спрайты, style LoRA                             | ≈ 7 ГБ; тот же файл, что на Mac. NoobAI — некоммерческая лицензия |
 | Anima: Base + Aesthetic + Turbo                    | фоны; Base — для обучения LoRA                   | три файла: DiT, текстовый энкодер Qwen3-0.6B, VAE Qwen-Image   |
 | FLUX 3 Image Klein, INT8                           | правки по инструкции, референсы                  | INT8 рассчитана на 8 ГБ; при 16 ГБ RAM следить за свопом       |
+| Krea 2 Turbo 12B, INT8 convrot (Krea 2 Community License) | рисование с нуля фразами, атмосфера; свои LoRA | стоит: `models/diffusion_models/krea2_turbo_int8_convrot.safetensors`, 12,6 ГБ, Comfy-Org/Krea-2, sha256 `8e4eeda7…f3f1`; энкодер и VAE — те же файлы, что у FLUX и Anima. ≈ 21 с на картинку 896×1152, RAM до 13,9 из 16 ГБ |
 | Qwen-Image-2.1, GGUF                               | эксперименты, прозрачный фон                     | только после апгрейда RAM до 32 ГБ; некоммерческая лицензия    |
 | BiRefNet (Comfy-Org, MIT)                          | удаление фона (в Mila Draw AI убрано 08.11)      | стоит: `models/background_removal/birefnet.safetensors`, 444 МБ; встроенные ноды ComfyUI 0.44 |
+| 4x_foolhardy_Remacri (CC-BY-NC-SA-4.0)            | Hires fix, на выбор: фактура и детали            | стоит: `models/upscale_models/4x_foolhardy_Remacri.safetensors`, 64 МБ |
+| LoRA (32 шт.)                                      | стиль, детали, одежда, эффекты                   | `models/loras/<illustrious|anima|krea2>/`; что каждая делает — [catalog/loras.md](catalog/loras.md) |
 | RealESRGAN_x4plus_anime_6B (BSD-3)                 | Hires fix в Mila Draw AI                         | стоит: `models/upscale_models/RealESRGAN_x4plus_anime_6B.pth`, 17,9 МБ, релиз Real-ESRGAN v0.2.2.4 на GitHub, sha256 `f872d837…99da` |
 
 ## Mila Draw AI (веб-интерфейс)
