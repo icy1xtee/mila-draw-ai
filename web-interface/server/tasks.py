@@ -259,6 +259,44 @@ def set_analysis(rel_path, analysis):
         write_json(path, meta)
 
 
+def set_gallery(rel_path, on):
+    """Mark a picture for the gallery (or take it out): "gallery": true in its .json."""
+    with _lock:
+        path = meta_path(rel_path)
+        meta = read_json(path) or {}
+        if on:
+            meta["gallery"] = True
+            meta["gallery_time"] = meta.get("gallery_time") or now()
+        else:
+            meta.pop("gallery", None)
+            meta.pop("gallery_time", None)
+        write_json(path, meta)
+    return bool(on)
+
+
+def gallery():
+    """Pictures marked for the gallery in every task, newest mark first."""
+    if not config.TASKS.exists():
+        return []
+    titles, result = {}, []
+    for meta_file in config.TASKS.glob("*/*.json"):
+        if meta_file.name == TASK_FILE:
+            continue
+        meta = read_json(meta_file) or {}
+        if not meta.get("gallery") or meta.get("type") not in ("upload", "generated"):
+            continue
+        image = next((meta_file.with_suffix(e) for e in IMAGE_EXT if meta_file.with_suffix(e).exists()), None)
+        if not image:
+            continue
+        task_id = meta_file.parent.name
+        if task_id not in titles:
+            titles[task_id] = (read_json(meta_file.parent / TASK_FILE) or {}).get("title", task_id)
+        meta.pop("payload", None)
+        result.append({**meta, "file": rel(image), "task_id": task_id, "task_title": titles[task_id]})
+    result.sort(key=lambda m: m.get("gallery_time", ""), reverse=True)
+    return result
+
+
 def pending_analyses():
     """Pictures whose description was not finished (e.g. the server stopped meanwhile)."""
     if not config.TASKS.exists():

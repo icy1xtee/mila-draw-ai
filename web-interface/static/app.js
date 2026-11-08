@@ -18,7 +18,24 @@ function h(tag, props = {}, ...children) {
     else if (k === "value" || k === "checked" || k === "disabled" || k === "selected") el[k] = v;
     else el.setAttribute(k, v === true ? "" : v);
   }
+  if (tag === "a") externalLink(el);
   return el;
+}
+
+// Links to other sites (Civitai, Hugging Face…) open in a new tab, so the task stays open.
+function externalLink(a) {
+  const href = a.getAttribute("href") || "";
+  if (/^https?:\/\//i.test(href) && new URL(href, location.href).origin !== location.origin) {
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+  }
+  return a;
+}
+
+// Text with bare URLs → text and links (that open in a new tab).
+function linkify(text) {
+  return String(text ?? "").split(/(https?:\/\/[^\s<>"«»]+[^\s<>"«».,;:!?)])/g).map((part, i) =>
+    i % 2 ? h("a", { href: part }, part.replace(/^https?:\/\//, "")) : part);
 }
 
 const ICON_TRASH = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
@@ -162,7 +179,15 @@ function showLogin() {
 function route() {
   const m = location.hash.match(/^#\/t\/([^/?]+)/);
   if (m) openTask(decodeURIComponent(m[1]));
+  else if (location.hash.startsWith("#/gallery")) openGallery();
   else openTasks();
+}
+
+// Home: two tabs — tasks and the gallery.
+function homeTabs(active) {
+  return h("nav", { class: "tabs" },
+    h("a", { class: "tab" + (active === "tasks" ? " on" : ""), href: "#/" }, "Задачи"),
+    h("a", { class: "tab" + (active === "gallery" ? " on" : ""), href: "#/gallery" }, "Галерея"));
 }
 window.addEventListener("hashchange", () => S.catalog && route());
 
@@ -187,7 +212,92 @@ async function openTasks() {
   const list = data.tasks.length
     ? h("div", { class: "task-grid" }, data.tasks.map(taskCard))
     : h("p", { class: "muted" }, "Задач пока нет.");
-  render(h("div", { class: "page" }, create, list));
+  render(h("div", { class: "page" }, homeTabs("tasks"), create, list));
+}
+
+// --- gallery: the best pictures of all tasks ---------------------------------------------------
+
+async function openGallery() {
+  S.view = "gallery";
+  S.task = null;
+  const data = await api("/api/gallery");
+  if (S.view !== "gallery") return;
+  S.gallery = data.items;
+  const reopen = (o) => { if (o.changed && S.view === "gallery") openGallery(); }; // only if a picture left the gallery
+  const grid = data.items.length
+    ? h("div", { class: "gallery-grid" }, data.items.map((it) =>
+      h("button", { class: "gallery-card", onclick: () => openViewer(it.file, { items: S.gallery, gallery: true, onClose: reopen }) },
+        h("img", { src: thumbUrl(it.file, 480), alt: "", loading: "lazy" }),
+        h("span", { class: "gallery-cap" },
+          h("b", {}, it.model_title || "Картинка"),
+          h("span", { class: "small muted" }, it.task_title)))))
+    : h("p", { class: "muted empty" }, "В галерее пока пусто. Откройте картинку в задаче и нажмите «Галерея» — она появится здесь.");
+  render(h("div", { class: "page" }, homeTabs("gallery"),
+    h("p", { class: "small muted gallery-hint" },
+      "Лучшие картинки из всех задач. Откройте картинку: там все её параметры и «Использовать как " +
+      "шаблон» — новая задача с той же моделью, LoRA и настройками, только без промпта: пишете свой " +
+      "и получаете картинку в этом стиле."),
+    grid));
+}
+
+// «Использовать как шаблон»: a new task with everything of the picture except the prompt.
+async function useAsTemplate(it) {
+  const m = S.catalog.models.find((x) => x.key === it.model);
+  if (!m) {
+    toast("Модели этой картинки больше нет в каталоге");
+    return;
+  }
+  const st = it.settings || {};
+  const base = (it.mode === "edit" && m.edit_params) || m.params;
+  const done = [`модель ${m.title}`], skipped = [];
+  const saved = store.get("settings:" + m.key, {});
+
+  const loras = [];
+  for (const l of st.loras || []) {
+    const c = S.catalog.loras.find((x) => x.file === l.file);
+    if (!c) { skipped.push(`LoRA «${stem(l.file)}» — её больше нет`); continue; }
+    loras.push({ file: l.file, on: true, strength: l.strength, ...(l.variant ? { variant: l.variant } : {}) });
+    done.push(`LoRA ${c.title} ${String(l.strength).replace(".", ",")}${l.variant ? ` (${l.variant})` : ""}`);
+  }
+  const next = {
+    ...saved,
+    steps: st.steps || base.steps, cfg: st.cfg ?? base.cfg,
+    sampler: st.sampler || base.sampler, scheduler: st.scheduler || base.scheduler,
+    quality: st.quality !== false, loras,
+    hires: st.hires
+      ? { ...hiresDefaults(m), ...st.hires, on: true, cfg: st.hires.cfg ?? "" }
+      : { ...hiresDefaults(m), ...(saved.hires || {}), on: false },
+  };
+  store.set("settings:" + m.key, next);
+  done.push(`${next.steps} шагов, CFG ${next.cfg}, ${next.sampler} / ${next.scheduler}`);
+  if (st.hires) done.push(`hires ×${String(st.hires.scale).replace(".", ",")}, сила ${st.hires.denoise}`);
+  if (m.tags) done.push(next.quality ? "теги качества включены" : "теги качества выключены");
+
+  const kind = S.catalog.kinds.some((k) => k.id === it.preset) ? it.preset : S.catalog.kinds[0].id;
+  const kindTitle = S.catalog.kinds.find((k) => k.id === kind)?.title;
+  done.push(`заготовка «${kindTitle}»${it.white_bg ? ", белый фон" : ""}`);
+  if (it.mode !== "text") skipped.push("исходные картинки — шаблон рисует без картинки");
+  if (it.preset && kind !== it.preset) skipped.push(`заготовка «${it.preset_title}» — она для работы с картинкой`);
+
+  const r = (v) => Math.min(2048, Math.max(512, Math.round(v / 64) * 64));
+  const size = it.base_size || it.size;
+  if (size) done.push(`размер ${r(size[0])}×${r(size[1])}`);
+  const negative = m.negative_works ? it.negative || "" : "";
+  if (negative) done.push("негатив");
+  done.push("seed случайный — каждый раз новый вариант");
+
+  try {
+    const t = await api("/api/tasks", { body: { title: `По шаблону: ${it.task_title || S.task?.title || "картинка"}` } });
+    store.set("draft:" + t.id, {
+      images: [], kind, action: null, white_bg: !!it.white_bg, model: m.key,
+      prompt: "", negative, count: 1, seed: "", denoise: null,
+      size: size ? { w: r(size[0]), h: r(size[1]) } : null,
+    });
+    store.set("model", m.key);
+    S.nextNote = { title: "Взято из шаблона", done, skipped };
+    location.hash = "#/t/" + t.id;
+    toast("Задача по шаблону создана — напишите промпт и нажмите «Нарисовать»", "info");
+  } catch (e) { toast(e.message); }
 }
 
 function taskCard(t) {
@@ -294,7 +404,8 @@ async function openTask(id) {
   }
   S.draft = loadDraft(S.task.id);
   jobCards.clear();
-  S.importNote = null;
+  S.importNote = S.nextNote || null; // «Использовать как шаблон» leaves what it filled in
+  S.nextNote = null;
   failedCards.clear();
   const ui = (S.ui = {});
 
@@ -829,14 +940,14 @@ function loraCard(m, l) {
         onclick: () => applyLoraSettings(m, l),
       }, `Поставить настройки автора: ${settingsText}`)),
     isOpen && h("div", { class: "lora-details small" },
-      (l.how || []).length > 0 && h("div", {}, h("b", {}, "Как использовать"), h("ul", {}, l.how.map((x) => h("li", {}, x)))),
-      (l.avoid || []).length > 0 && h("div", {}, h("b", {}, "Как не надо"), h("ul", {}, l.avoid.map((x) => h("li", {}, x)))),
+      (l.how || []).length > 0 && h("div", {}, h("b", {}, "Как использовать"), h("ul", {}, l.how.map((x) => h("li", {}, linkify(x))))),
+      (l.avoid || []).length > 0 && h("div", {}, h("b", {}, "Как не надо"), h("ul", {}, l.avoid.map((x) => h("li", {}, linkify(x))))),
       h("p", {}, h("b", {}, "Сила: "), `по умолчанию ${num(l.strength)}, можно ${num(l.range[0])}…${num(l.range[1])}`),
       l.described !== false && h("p", {}, h("b", {}, "Лицензия: "),
         lic.images_commercial ? "автор разрешает продавать картинки" : "продавать картинки нельзя — для себя и этюдов",
-        lic.note ? `. ${lic.note}` : ""),
+        lic.note ? [". ", linkify(lic.note)] : ""),
       h("p", { class: "muted" }, [l.version, l.author && `автор ${l.author}`, l.file].filter(Boolean).join(" · "),
-        l.source && [" · ", h("a", { href: l.source, target: "_blank", rel: "noopener" }, "Civitai")])));
+        l.source && [" · ", h("a", { href: l.source }, /civitai/i.test(l.source) ? "Civitai" : "источник")])));
 }
 
 function applyLoraSettings(m, l) {
@@ -897,7 +1008,7 @@ function renderPromptTools() {
       },
     }, icon(ICON_UNDO), "Вернуть как было"),
     S.importNote && h("div", { class: "tip import-note" },
-      h("p", {}, h("b", {}, "Перенесено: "), S.importNote.done.join(" · ") || "—"),
+      h("p", {}, h("b", {}, `${S.importNote.title || "Перенесено"}: `), S.importNote.done.join(" · ") || "—"),
       S.importNote.skipped.length > 0 && h("p", { class: "small" }, h("b", {}, "Не перенесено: "), S.importNote.skipped.join(" · ")),
       h("button", { class: "link small-link", onclick: () => { S.importNote = null; renderPromptTools(); } }, "Скрыть")));
 }
@@ -1167,7 +1278,7 @@ function renderAssistant() {
         class: "btn", disabled: S.assisting || !S.draft.wish.trim(), onclick: runAssistant,
       }, S.assisting ? "Claude думает…" : "Заполнить промпт")),
     tip && tip.text && h("div", { class: "tip" },
-      h("p", {}, tip.text),
+      h("p", {}, linkify(tip.text)),
       sets.length > 0 && h("div", { class: "row" },
         h("span", { class: "small" }, "Настройки: ",
           h("b", {}, sets.map(([k, v]) => `${SETTING_NAMES[k] || k} ${String(v).replace(".", ",")}`).join(" · "))),
@@ -1491,7 +1602,7 @@ function openHelp() {
       h("p", { class: "help-how" }, sec.how),
       h("div", {},
         h("h3", {}, "Как писать промпт"),
-        h("ul", {}, (sec.write || []).map((line) => h("li", {}, line)))),
+        h("ul", {}, (sec.write || []).map((line) => h("li", {}, linkify(line))))),
       sec.example && h("div", {},
         h("h3", {}, "Пример"),
         h("p", { class: "help-example" }, sec.example),
@@ -1642,7 +1753,7 @@ function jobEntry(items) {
 
 // A history picture with a trash button in its corner.
 function tileWithDelete(it, tile) {
-  return h("div", { class: "tile-wrap" }, tile,
+  return h("div", { class: "tile-wrap" + (it.gallery ? " in-gallery" : ""), title: it.gallery ? "В галерее" : null }, tile,
     h("button", {
       class: "tile-delete", title: it.type === "upload" ? "Удалить картинку" : "Удалить генерацию",
       "aria-label": "Удалить картинку", onclick: () => deletePicture(it.file),
@@ -1727,15 +1838,18 @@ function renderTaskJobs() {
 
 // --- viewer ---------------------------------------------------------------------------------
 
-function openViewer(file) {
+// opts.items — pictures to page through (the gallery); without it — the task's history.
+// opts.gallery — show «Использовать как шаблон»; opts.onClose — called when the viewer closes.
+function openViewer(file, opts = {}) {
   const dlg = $("#viewer");
-  let list = historyGroups().flatMap((g) => g.items.map((i) => i.file));
+  const find = (f) => (opts.items || S.task?.items || []).find((i) => i.file === f);
+  let list = opts.items ? opts.items.map((i) => i.file) : historyGroups().flatMap((g) => g.items.map((i) => i.file));
   let index = Math.max(0, list.indexOf(file));
   const step = (d) => { index = (index + d + list.length) % list.length; show(); };
 
   function show() {
     const f = list[index];
-    const it = item(f) || { file: f };
+    const it = find(f) || { file: f };
     const info = it.type === "generated"
       ? [
         it.idea && h("p", {}, h("b", {}, it.idea.title), it.idea.description ? " — " + it.idea.description : ""),
@@ -1763,12 +1877,40 @@ function openViewer(file) {
       h("div", { class: "viewer-info" }, info),
       h("div", { class: "row viewer-actions" },
         h("a", { class: "btn", href: fileUrl(f) + "?download=1", download: "" }, "Скачать"),
-        h("button", {
+        !opts.items && h("button", {
           class: "btn", title: "Прикрепить к следующей генерации",
           onclick: () => { dlg.close(); attach(f); },
-        }, "Доработать")));
+        }, "Доработать"),
+        it.type && h("button", {
+          class: "btn gallery-btn" + (it.gallery ? " on" : ""),
+          title: it.gallery ? "Картинка в галерее — нажмите, чтобы убрать" : "Добавить в галерею на главной",
+          "aria-pressed": it.gallery ? "true" : "false",
+          onclick: () => toggleGallery(it),
+        }, it.gallery ? "✓ Галерея" : "Галерея"),
+        opts.gallery && it.type === "generated" && h("button", {
+          class: "btn primary", title: "Новая задача с той же моделью, LoRA и настройками, только без промпта",
+          onclick: () => { dlg.close(); useAsTemplate(it); },
+        }, "Использовать как шаблон")));
   }
 
+  async function toggleGallery(it) {
+    const on = !it.gallery;
+    try {
+      await api("/api/gallery", { body: { file: it.file, on } });
+    } catch (e) {
+      toast(e.message);
+      return;
+    }
+    it.gallery = on;
+    opts.changed = true;
+    const inTask = S.task?.items?.find((i) => i.file === it.file);
+    if (inTask) inTask.gallery = on;
+    if (S.view === "task") renderHistory();
+    show();
+    toast(on ? "Добавлено в галерею" : "Убрано из галереи", "info");
+  }
+
+  dlg.onclose = opts.onClose ? () => opts.onClose(opts) : null;
   dlg.onkeydown = (e) => {
     if (e.key === "ArrowRight") step(1);
     if (e.key === "ArrowLeft") step(-1);

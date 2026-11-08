@@ -18,11 +18,35 @@ Things и четыре модели, генерация идёт из терми
 **MSI** (07.11.2026): железо проверено, идёт настройка ComfyUI. Сравнение моделей будет на MSI,
 после настройки ComfyUI (план — [.claude/develop/msi/plan.md](.claude/develop/msi/plan.md)).
 
+## Запуск и остановка studio (MSI)
+
+`studio` запускает и гасит ComfyUI и веб-интерфейс [Mila Draw AI](web-interface/README.md) на MSI.
+Команды — из корня репо: в cmd просто `studio …`, в PowerShell — с `.\` впереди (`.\studio start`).
+
+| Команда                                    | Что делает                            |
+| ------------------------------------------ | ------------------------------------- |
+| `studio start`                             | запустить ComfyUI и Mila Draw AI      |
+| `studio stop`                              | остановить оба                        |
+| `studio restart`                           | перезапустить оба                     |
+| `studio start comfy` / `studio stop comfy` | только ComfyUI (и `restart comfy`)    |
+| `studio start web` / `studio stop web`     | только Mila Draw AI (и `restart web`) |
+| `studio status`                            | что запущено и по каким адресам       |
+| `studio logs web` / `studio logs comfy`    | смотреть лог, Ctrl+C — выйти          |
+
+- Сервисы работают в фоне без окон и не гаснут, если закрыть терминал.
+- `studio start` ждёт, пока сервисы ответят, и печатает адреса: на самом MSI —
+  `http://127.0.0.1:8000`, с телефона, планшета и Mac в домашней сети — `http://<IP MSI>:8000`
+  (сейчас `http://192.168.0.4:8000`; набирать целиком, с `http://` и `:8000`).
+- Двойной щелчок по `web-interface\start.bat` — то же, что `studio start`.
+- Логи — `logs\comfy.log` и `logs\web.log` (не в git). Логика — [msi/scripts/studio.ps1](msi/scripts/studio.ps1).
+- Первый запуск (пароль, брандмауэр) — в [web-interface/README.md](web-interface/README.md#первый-запуск-один-раз).
+
 ## Что где
 
 ```
 mila-draw-ai/
 ├── README.md              этот файл
+├── studio.bat             запуск и остановка ComfyUI и Mila Draw AI на MSI
 ├── .claude/
 │   ├── CLAUDE.md          контекст для Claude Code: о проекте, правила, машины
 │   ├── vibe-description/  мир, места, персонажи: исходники и карточки для промптов
@@ -48,7 +72,7 @@ mila-draw-ai/
 │   └── scripts/           генерация через API: скрипт, настройки моделей, файлы прогонов
 ├── msi/                   всё для MSI Katana 17 B12VFK
 │   └── README.md          роль, установка, модели, настройки
-└── web-interface/         локальный веб-интерфейс: передача content/, позже — управление генерацией
+└── web-interface/         Mila Draw AI — веб-интерфейс генерации для Милы (работает на MSI)
     └── README.md
 ```
 

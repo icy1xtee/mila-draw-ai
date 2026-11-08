@@ -141,6 +141,22 @@ async def delete_task(task_id: str):
     return {"ok": True}
 
 
+@app.get("/api/gallery")
+async def get_gallery():
+    """Pictures marked «Галерея», from every task."""
+    return {"items": tasks.gallery()}
+
+
+@app.post("/api/gallery")
+async def mark_gallery(data: dict = Body(...)):
+    """Put a picture in the gallery or take it out: {file, on}."""
+    try:
+        on = tasks.set_gallery(data.get("file", ""), bool(data.get("on")))
+    except (PermissionError, FileNotFoundError):
+        raise HTTPException(404, "Нет такой картинки")
+    return {"ok": True, "gallery": on}
+
+
 @app.delete("/api/pictures/{path:path}")
 async def delete_picture(path: str):
     """Delete one picture (a failed generation or an attached picture) with its .json."""
