@@ -334,6 +334,8 @@ class Jobs:
                 "prompt": form["prompt"], "negative": form["negative"],
                 "inputs": form["images"] if job.mode == "edit" else form["images"][:1],
                 "settings": settings, "seed": seed, "seconds": seconds, "size": size,
+                # the first pass (before hires fix); the page writes it as "Size" when copying
+                "base_size": [job.width, job.height] if job.width and job.height else size,
                 "loaded_model": job.loading, "positive_final": positive,
                 "negative_final": negative, "machine": "msi", "payload": graph,
             }

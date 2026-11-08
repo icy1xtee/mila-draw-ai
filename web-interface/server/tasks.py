@@ -174,6 +174,22 @@ def delete(task_id):
     shutil.rmtree(config.CACHE / "thumbs" / task_id, ignore_errors=True)
 
 
+def delete_picture(rel_path):
+    """Remove one picture of a task with its .json and previews. Only a person does this, from
+    the page; there is no undo."""
+    image = resolve(rel_path)
+    if (image.suffix.lower() not in IMAGE_EXT or not image.is_file()
+            or image.parent.parent != config.TASKS.resolve()
+            or not (image.parent / TASK_FILE).exists()):
+        raise FileNotFoundError(rel_path)
+    with _lock:
+        image.unlink()
+        image.with_suffix(".json").unlink(missing_ok=True)
+    thumbs = config.CACHE / "thumbs" / image.parent.name
+    for preview in thumbs.glob(f"{image.name}.*.webp"):
+        preview.unlink(missing_ok=True)
+
+
 def rename(task_id, title):
     path = folder(task_id) / TASK_FILE
     task = read_json(path)

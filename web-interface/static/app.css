@@ -161,13 +161,17 @@ header.top {
 .login input { width: 100%; }
 
 .new-task { padding: 12px; margin-bottom: 16px; }
-.new-task input { flex: 1; min-width: 180px; }
+.new-task-row { flex-wrap: nowrap; }
+.new-task input { flex: 1; min-width: 0; }
 
 .task-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: 1fr; /* phone: one card per row */
   gap: 12px;
 }
+@media (min-width: 600px) { .task-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 900px) { .task-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1200px) { .task-grid { grid-template-columns: repeat(6, 1fr); } }
 .task-card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -178,15 +182,17 @@ header.top {
   display: flex;
   flex-direction: column;
 }
-.task-card img, .cover-empty { aspect-ratio: 1; width: 100%; object-fit: cover; background: var(--panel-2); }
+.task-card img, .cover-empty { aspect-ratio: 1; width: 100%; object-fit: contain; background: var(--panel-2); }
 .task-card-body { padding: 10px 12px; display: grid; gap: 2px; }
 .task-card-body b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* --- task ---------------------------------------------------------------------------------- */
 
-.task-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.task-head { display: grid; gap: 6px; margin-bottom: 12px; }
+.task-head-row { display: flex; align-items: center; gap: 8px; }
 .task-head .back { text-decoration: none; white-space: nowrap; font-size: 0.95rem; }
-.task-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* the title has its own line and wraps: the whole name is visible on a phone */
+.task-title { overflow-wrap: anywhere; cursor: pointer; }
 
 .task-layout { display: grid; gap: 16px; }
 .task-left, .task-right { min-width: 0; }
@@ -266,7 +272,7 @@ button.tag:hover { border-color: var(--accent); }
 .adds span { color: var(--text); }
 
 .model-row select { flex: 1; min-width: 140px; }
-.help-btn { width: 44px; padding: 0; border-radius: 22px; font-weight: 700; color: var(--accent); }
+.help-btn { width: 44px; padding: 0; font-weight: 700; color: var(--accent); } /* rounded like the other buttons */
 
 .help h3 { font-size: 0.95rem; margin: 0 0 6px; }
 .help ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
@@ -462,7 +468,7 @@ dialog::backdrop { background: rgb(0 0 0 / 55%); }
 .tile-cap span { color: var(--muted); }
 
 /* the viewer zooms the picture, not the page */
-.viewer { touch-action: pan-y; overscroll-behavior: contain; }
+.viewer { touch-action: none; overscroll-behavior: contain; overflow: hidden; }
 .viewer-img { touch-action: none; overflow: hidden; cursor: zoom-in; }
 .viewer-img.zoomed { cursor: grab; }
 .viewer-img img { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; transform-origin: center center; will-change: transform; }
@@ -494,3 +500,70 @@ dialog::backdrop { background: rgb(0 0 0 / 55%); }
 .composer > *, .block > *, .lora-group > *, .lora-card > * { min-width: 0; }
 .lora-card, .lora-details p, .lora-details li, .lora-controls p { overflow-wrap: anywhere; }
 .lora-controls .link { text-align: left; }
+
+
+/* --- square icon buttons (rename, delete, new task) ------------------------------------------ */
+.square-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); color: var(--text);
+}
+.square-btn:hover { border-color: var(--accent); }
+.square-btn.danger { color: var(--err); }
+.square-btn.danger:hover { border-color: var(--err); }
+.square-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+.composer-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* «не для продажи» on LoRA: not on phones (Pavel keeps track of licenses himself) */
+@media (max-width: 700px) { .lora-card .muted-pill { display: none; } }
+
+/* --- all parameters of a picture in the viewer ---------------------------------------------- */
+.params { margin-top: 4px; }
+.params summary { cursor: pointer; color: #c9b8f5; font-size: 0.92rem; padding: 4px 0; }
+.params dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; font-size: 0.85rem; }
+.params dt { color: #a39dab; }
+.params dd { margin: 0; overflow-wrap: anywhere; }
+.params-text {
+  white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.78rem; line-height: 1.4;
+  background: rgb(255 255 255 / 8%); border-radius: 8px; padding: 8px 10px; margin: 6px 0;
+  max-height: 30dvh; overflow: auto; user-select: text;
+}
+.params .btn { background: rgb(255 255 255 / 12%); border-color: transparent; color: #f2f0f5; }
+@media (max-width: 520px) { .params dl { grid-template-columns: 1fr; gap: 0; } .params dd { margin-bottom: 4px; } }
+.viewer-info:has(.params[open]) { max-height: 62dvh; }
+
+
+/* buttons with an icon and a caption (back, paste parameters, undo) */
+.icon-text-btn { gap: 6px; padding: 8px 14px 8px 10px; }
+.icon-text-btn svg { flex: none; }
+.prompt-tools .icon-text-btn { min-height: 40px; }
+.model-row .square-btn { color: var(--muted); }
+.model-row .square-btn:hover { color: var(--text); }
+
+/* a modal is open: the page behind does not scroll (iOS too) */
+html.no-scroll, html.no-scroll body { overflow: hidden; overscroll-behavior: none; }
+/* in the viewer only the info panel scrolls, and only inside itself */
+.viewer-info { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.viewer-actions { touch-action: manipulation; }
+.params-text { max-height: none; }
+.modal { overscroll-behavior: contain; }
+.modal-body { overscroll-behavior: contain; }
+.viewer-actions .viewer-delete { background: rgb(255 255 255 / 10%); border-color: transparent; color: #ff8a7a; }
+.viewer-actions .viewer-delete:hover { border-color: #ff8a7a; }
+
+/* trash button in the corner of a history picture (always visible: phones have no hover) */
+.tile-wrap { position: relative; }
+.tile-wrap > .tile { width: 100%; }
+.tile-delete {
+  position: absolute; top: 6px; right: 6px;
+  width: 34px; height: 34px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px;
+  background: rgb(0 0 0 / 45%); color: #fff;
+}
+.tile-delete svg { width: 18px; height: 18px; }
+.tile-delete:hover { background: var(--err); }
+.upload-row .tile-delete { width: 28px; height: 28px; top: 4px; right: 4px; }
+.upload-row .tile-delete svg { width: 15px; height: 15px; }

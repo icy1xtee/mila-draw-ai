@@ -21,6 +21,15 @@ function h(tag, props = {}, ...children) {
   return el;
 }
 
+const ICON_TRASH = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+const ICON_PLUS = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const ICON_EDIT = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const ICON_BACK = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+const ICON_PASTE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 13h6M9 17h4"/></svg>';
+const ICON_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+const ICON_GEAR = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+const icon = (svg) => { const t = document.createElement("template"); t.innerHTML = svg; return t.content.firstChild; };
+
 const store = {
   get(key, fallback) {
     try {
@@ -173,7 +182,8 @@ async function openTasks() {
         location.hash = "#/t/" + t.id;
       } catch (x) { toast(x.message); }
     },
-  }, h("div", { class: "row" }, title, h("button", { class: "btn primary", type: "submit" }, "Новая задача")));
+  }, h("div", { class: "row new-task-row" }, title,
+    h("button", { class: "square-btn primary", type: "submit", title: "Новая задача", "aria-label": "Новая задача" }, icon(ICON_PLUS))));
   const list = data.tasks.length
     ? h("div", { class: "task-grid" }, data.tasks.map(taskCard))
     : h("p", { class: "muted" }, "Задач пока нет.");
@@ -193,7 +203,7 @@ function taskCard(t) {
 function loadDraft(taskId) {
   const saved = store.get("draft:" + taskId, {});
   const d = {
-    images: [], kind: "character", action: null, white_bg: false,
+    images: [], kind: S.catalog.kinds[0]?.id || "other", action: null, white_bg: false, // «Без шаблона»: nothing added
     model: store.get("model", S.catalog.models[0].key),
     prompt: "", negative: "", undo: null, wish: "", tip: null,
     count: 1, seed: "", size: null, denoise: null,
@@ -288,7 +298,7 @@ async function openTask(id) {
   failedCards.clear();
   const ui = (S.ui = {});
 
-  ui.title = h("h1", { class: "task-title" }, S.task.title);
+  ui.title = h("h1", { class: "task-title", title: "Нажмите, чтобы переименовать", onclick: renameTask }, S.task.title);
   ui.attach = h("section", { class: "block attach" });
   ui.presets = h("section", { class: "block" });
   ui.model = h("section", { class: "block" });
@@ -343,15 +353,19 @@ async function openTask(id) {
   ui.history = h("div", { class: "history" });
 
   const composer = h("div", { class: "composer card" },
+    h("div", { class: "composer-top" },
+      h("button", { class: "btn", title: "Промпт и настройки из Civitai, A1111, Forge или из картинки здесь («Скопировать параметры» в просмотре)", onclick: openImport }, icon(ICON_PASTE), "Вставить параметры"),
+      h("span", { class: "small muted" }, "из Civitai или из своей картинки")),
     ui.attach, ui.presets, ui.brainstorm, ui.model, ui.loras, ui.assistant, ui.promptBlock, ui.submit);
 
   render(h("div", { class: "page task" },
     h("div", { class: "task-head" },
-      h("a", { class: "back", href: "#/" }, "← Задачи"),
-      ui.title,
-      h("button", { class: "icon-btn", title: "Переименовать", onclick: renameTask }, "✎"),
-      h("span", { class: "spacer" }),
-      h("button", { class: "btn danger", title: "Удалить задачу со всеми картинками", onclick: deleteTask }, "Удалить")),
+      h("div", { class: "task-head-row" },
+        h("a", { class: "btn icon-text-btn", href: "#/", title: "Ко всем задачам" }, icon(ICON_BACK), "Задачи"),
+        h("span", { class: "spacer" }),
+        h("button", { class: "square-btn", title: "Переименовать задачу", "aria-label": "Переименовать задачу", onclick: renameTask }, icon(ICON_EDIT)),
+        h("button", { class: "square-btn danger", title: "Удалить задачу со всеми картинками", "aria-label": "Удалить задачу", onclick: deleteTask }, icon(ICON_TRASH))),
+      ui.title),
     h("div", { class: "task-layout" },
       h("div", { class: "task-left" }, composer),
       h("div", { class: "task-right" }, ui.jobs, ui.history))));
@@ -703,7 +717,7 @@ function renderModel() {
     h("label", { class: "label" }, "Модель"),
     h("div", { class: "row model-row" }, select,
       h("button", { class: "btn help-btn", title: "Как писать промпт для этой модели", onclick: openHelp }, "?"),
-      h("button", { class: "btn", onclick: openSettings }, "Настройки")),
+      h("button", { class: "square-btn", title: "Настройки модели: размер, шаги, CFG, сэмплер, seed, hires fix", "aria-label": "Настройки модели", onclick: openSettings }, icon(ICON_GEAR))),
     h("p", { class: "small muted settings-line" }, parts.join(" · ")),
     note && h("p", { class: "small warn" }, note));
 }
@@ -873,7 +887,7 @@ function renderPromptTools() {
   const changed = u && (u.prompt !== ui.prompt.value || u.negative !== ui.negative.value);
   fill(ui.promptTools,
     changed && h("button", {
-      class: "link",
+      class: "btn icon-text-btn", title: "Вернуть промпт и негатив, какими они были до очистки, помощника или вставки",
       onclick: () => {
         ui.prompt.value = S.draft.prompt = u.prompt;
         ui.negative.value = S.draft.negative = u.negative;
@@ -881,9 +895,7 @@ function renderPromptTools() {
         saveDraft();
         renderPromptTools();
       },
-    }, "↶ Вернуть как было"),
-    h("span", { class: "spacer" }),
-    h("button", { class: "link", title: "Промпт и настройки из Civitai, A1111, Forge", onclick: openImport }, "⇩ Вставить параметры"),
+    }, icon(ICON_UNDO), "Вернуть как было"),
     S.importNote && h("div", { class: "tip import-note" },
       h("p", {}, h("b", {}, "Перенесено: "), S.importNote.done.join(" · ") || "—"),
       S.importNote.skipped.length > 0 && h("p", { class: "small" }, h("b", {}, "Не перенесено: "), S.importNote.skipped.join(" · ")),
@@ -986,13 +998,13 @@ function applyParams(text) {
     if (name.endsWith(" " + s)) { name = name.slice(0, -s.length - 1); sch = s; }
   }
   const has = (list, x) => !list.length || list.includes(x);
-  const sampler = A1111_SAMPLERS[name];
+  const sampler = A1111_SAMPLERS[name] || (S.catalog.samplers.includes(name) ? name : undefined); // our own names too
   if (sampler && has(S.catalog.samplers, sampler)) {
     next.sampler = sampler;
     done.push(`сэмплер ${p.Sampler} → ${sampler}`);
   } else if (p.Sampler) skipped.push(`сэмплер «${p.Sampler}» — в ComfyUI нет такого`);
   const type = String(p["Schedule type"] || "").toLowerCase();
-  if (type && type !== "automatic") sch = A1111_SCHEDULERS[type] || null;
+  if (type && type !== "automatic") sch = A1111_SCHEDULERS[type] || (S.catalog.schedulers.includes(type) ? type : null);
   // «Automatic» in A1111: Karras for the DPM++ family, the plain schedule for the rest.
   if (!sch && (sampler || type === "automatic")) sch = (sampler || "").startsWith("dpmpp") ? "karras" : "normal";
   if (sch && has(S.catalog.schedulers, sch)) {
@@ -1015,7 +1027,9 @@ function applyParams(text) {
       done.push(`hires ×${String(scale).replace(".", ",")}, сила ${next.hires.denoise}, ${next.hires.steps} шагов` +
         (next.hires.cfg !== "" ? `, CFG ${next.hires.cfg}` : ""));
       const up = String(p["Hires upscaler"] || "");
-      if (up && !/RealESRGAN_x4plus_anime_6B/i.test(up)) skipped.push(`апскейлер «${up}» — у нас RealESRGAN anime 6B`);
+      const ours = (S.catalog.upscalers || []).find((f) => f.replace(/\.[^.]+$/, "").toLowerCase() === up.toLowerCase());
+      if (ours) next.hires.upscaler = ours;
+      else if (up) skipped.push(`апскейлер «${up}» — у нас его нет, взят RealESRGAN anime 6B`);
     } else skipped.push(`hires fix — у ${m.title} его нет`);
   } else {
     next.hires = { ...hiresDefaults(m), ...(saved.hires || {}), on: false };
@@ -1028,8 +1042,10 @@ function applyParams(text) {
     promptText = promptText.replace(all, "");
     const l = S.catalog.loras.find((x) => x.file.replace(/\\/g, "/").split("/").pop().replace(/\.[^.]+$/, "").toLowerCase() === file.toLowerCase());
     if (l) {
-      loras.push({ file: l.file, on: true, strength: w ? +w : l.strength });
-      done.push(`LoRA ${l.title}`);
+      // The variant whose word is in the prompt (our «Скопировать параметры» writes it there).
+      const variant = (l.variants || []).find((v) => rawPrompt.includes(v.word));
+      loras.push({ file: l.file, on: true, strength: w ? +w : l.strength, ...(variant ? { variant: variant.word } : {}) });
+      done.push(`LoRA ${l.title}${w ? ` ${w}` : ""}`);
     } else skipped.push(`LoRA «${file}» — её нет в ComfyUI`);
   }
   promptText = promptText.replace(/[ \t]*,[ \t]*,/g, ",").trim();
@@ -1085,7 +1101,7 @@ function openImport() {
   fill(dlg,
     h("div", { class: "modal-head" }, h("h2", {}, "Вставить параметры"), h("button", { class: "icon-btn", onclick: () => dlg.close() }, "✕")),
     h("div", { class: "modal-body" },
-      h("p", { class: "small muted" }, "Параметры генерации из Civitai, A1111 или Forge: промпт, негатив и строка «Steps: …». Применятся модель, размер, шаги, CFG, сэмплер, планировщик, seed, hires fix и LoRA; промпт заменится (вернуть — «↶ Вернуть как было»). Можно и просто вставить такой текст в поле промпта."),
+      h("p", { class: "small muted" }, "Параметры генерации из Civitai, A1111 или Forge: промпт, негатив и строка «Steps: …». Применятся модель, размер, шаги, CFG, сэмплер, планировщик, seed, hires fix и LoRA; промпт заменится (вернуть — кнопка «Вернуть как было»). Можно и просто вставить такой текст в поле промпта."),
       area, error),
     h("div", { class: "modal-foot row" }, h("span", { class: "spacer" }),
       h("button", {
@@ -1100,7 +1116,7 @@ function openImport() {
           applyParams(area.value);
         },
       }, "Применить")));
-  dlg.showModal();
+  openDialog(dlg);
   area.focus();
 }
 
@@ -1444,7 +1460,7 @@ function openSettings() {
       }, "Сбросить"),
       h("span", { class: "spacer" }),
       h("button", { class: "btn primary", onclick: () => dlg.close() }, "Готово")));
-  dlg.showModal();
+  openDialog(dlg);
 }
 
 // --- help window: how this model works and how to write for it ----------------------------
@@ -1499,10 +1515,19 @@ function openHelp() {
     body,
     h("div", { class: "modal-foot row" }, h("span", { class: "spacer" }),
       h("button", { class: "btn primary", onclick: () => dlg.close() }, "Понятно")));
-  dlg.showModal();
+  openDialog(dlg);
 }
 
 // A form field; helpKey adds the explanation from help.json → settings (and the model's line).
+// Modal windows: the page behind is locked so only the window's own content scrolls.
+function openDialog(dlg) {
+  document.documentElement.classList.add("no-scroll");
+  dlg.addEventListener("close", () => {
+    if (!document.querySelector("dialog[open]")) document.documentElement.classList.remove("no-scroll");
+  }, { once: true });
+  dlg.showModal();
+}
+
 function field(label, control, helpKey) {
   const help = helpKey && ((S.catalog.help || {}).settings || {})[helpKey];
   const note = help && (help.models || {})[model().key];
@@ -1590,10 +1615,10 @@ function brainstormEntry(items) {
       h("span", { class: "small muted" }, timeText(first.time))),
     src && item(src) && h("div", { class: "entry-inputs" },
       h("button", { class: "mini", onclick: () => openViewer(src) }, h("img", { src: thumbUrl(src, 160), alt: "" }))),
-    h("div", { class: "grid" }, items.map((it) =>
+    h("div", { class: "grid" }, items.map((it) => tileWithDelete(it,
       h("button", { class: "tile captioned", onclick: () => openViewer(it.file) },
         h("img", { src: thumbUrl(it.file, 640), alt: "", loading: "lazy" }),
-        h("span", { class: "tile-cap" }, h("b", {}, it.idea.title), h("span", {}, it.model_title))))));
+        h("span", { class: "tile-cap" }, h("b", {}, it.idea.title), h("span", {}, it.model_title)))))));
 }
 
 function jobEntry(items) {
@@ -1604,22 +1629,52 @@ function jobEntry(items) {
       first.preset_title && h("span", { class: "pill" }, first.preset_title),
       h("span", { class: "spacer" }),
       h("span", { class: "small muted" }, timeText(first.time))),
-    (first.inputs || []).length > 0 && h("div", { class: "entry-inputs" },
-      first.inputs.map((f) => h("button", { class: "mini", onclick: () => openViewer(f) },
+    (first.inputs || []).some(item) && h("div", { class: "entry-inputs" },
+      first.inputs.filter(item).map((f) => h("button", { class: "mini", onclick: () => openViewer(f) },
         h("img", { src: thumbUrl(f, 160), alt: "" })))),
     first.prompt && h("p", {
       class: "entry-prompt clamp", onclick: (e) => e.currentTarget.classList.toggle("clamp"),
     }, first.prompt),
-    h("div", { class: "grid" }, items.map((it) =>
+    h("div", { class: "grid" }, items.map((it) => tileWithDelete(it,
       h("button", { class: "tile", onclick: () => openViewer(it.file) },
-        h("img", { src: thumbUrl(it.file, 640), alt: "", loading: "lazy" })))));
+        h("img", { src: thumbUrl(it.file, 640), alt: "", loading: "lazy" }))))));
+}
+
+// A history picture with a trash button in its corner.
+function tileWithDelete(it, tile) {
+  return h("div", { class: "tile-wrap" }, tile,
+    h("button", {
+      class: "tile-delete", title: it.type === "upload" ? "Удалить картинку" : "Удалить генерацию",
+      "aria-label": "Удалить картинку", onclick: () => deletePicture(it.file),
+    }, icon(ICON_TRASH)));
+}
+
+// Delete one picture after asking; the history redraws without it.
+async function deletePicture(f) {
+  const it = item(f) || {};
+  const what = it.type === "upload" ? "прикреплённую картинку" : "эту генерацию";
+  if (!window.confirm(`Удалить ${what}?\n\nКартинка и её параметры удалятся с MSI насовсем, вернуть нельзя.`)) return false;
+  try {
+    await api("/api/pictures/" + enc(f), { method: "DELETE" });
+  } catch (e) {
+    toast(e.message);
+    return false;
+  }
+  if (S.draft.images.includes(f)) {
+    S.draft.images = S.draft.images.filter((x) => x !== f);
+    saveDraft();
+    refreshComposer();
+  }
+  await reloadTask();
+  toast("Картинка удалена", "info");
+  return true;
 }
 
 function uploadEntry(it) {
   return h("article", { class: "entry upload" },
     h("div", { class: "upload-row" },
-      h("button", { class: "tile", onclick: () => openViewer(it.file) },
-        h("img", { src: thumbUrl(it.file, 320), alt: "", loading: "lazy" })),
+      tileWithDelete(it, h("button", { class: "tile", onclick: () => openViewer(it.file) },
+        h("img", { src: thumbUrl(it.file, 320), alt: "", loading: "lazy" }))),
       h("div", {},
         h("div", { class: "entry-head" }, h("b", {}, "Картинка"), h("span", { class: "spacer" }),
           h("span", { class: "small muted" }, timeText(it.time))),
@@ -1674,7 +1729,7 @@ function renderTaskJobs() {
 
 function openViewer(file) {
   const dlg = $("#viewer");
-  const list = historyGroups().flatMap((g) => g.items.map((i) => i.file));
+  let list = historyGroups().flatMap((g) => g.items.map((i) => i.file));
   let index = Math.max(0, list.indexOf(file));
   const step = (d) => { index = (index + d + list.length) % list.length; show(); };
 
@@ -1689,6 +1744,7 @@ function openViewer(file) {
           it.seconds ? ` · ${seconds(it.seconds)}` : ""),
         it.prompt && h("p", { class: "small" }, it.prompt),
         it.negative && h("p", { class: "small muted" }, "Негатив: " + it.negative),
+        paramsBlock(it),
       ]
       : [analysisView(it, false)];
     const img = h("img", { src: fileUrl(f), alt: "", draggable: "false" });
@@ -1718,7 +1774,101 @@ function openViewer(file) {
     if (e.key === "ArrowLeft") step(-1);
   };
   show();
-  dlg.showModal();
+  openDialog(dlg);
+}
+
+// --- parameters of a picture: shown in the viewer, copied in the A1111/Civitai format -----------
+// «Скопировать параметры» gives the same text Civitai's «Copy generation data» gives, so
+// «Вставить параметры» (here, on Civitai, in A1111/Forge) brings back the model, prompt, size,
+// sampler, seed, hires fix and LoRA.
+
+const SAMPLER_NAMES = { euler_ancestral: "Euler a", euler: "Euler", heun: "Heun", lms: "LMS", ddim: "DDIM", lcm: "LCM", dpmpp_2m: "DPM++ 2M", dpmpp_2m_sde: "DPM++ 2M SDE", dpmpp_3m_sde: "DPM++ 3M SDE", dpmpp_sde: "DPM++ SDE", dpmpp_2s_ancestral: "DPM++ 2S a", dpm_2: "DPM2", dpm_2_ancestral: "DPM2 a", uni_pc: "UniPC", dpm_fast: "DPM fast", dpm_adaptive: "DPM adaptive" };
+const SCHEDULER_NAMES = { karras: "Karras", exponential: "Exponential", normal: "Normal", simple: "Simple", sgm_uniform: "SGM Uniform", beta: "Beta", ddim_uniform: "DDIM", kl_optimal: "KL Optimal" };
+const stem = (f) => String(f || "").replace(/\\/g, "/").split("/").pop().replace(/\.[^.]+$/, "");
+
+function paramsText(it) {
+  const m = S.catalog.models.find((x) => x.key === it.model) || { files: [], params: {} };
+  const st = it.settings || {};
+  const base = (it.mode === "edit" && m.edit_params) || m.params || {};
+  const steps = st.steps || base.steps, cfg = st.cfg ?? base.cfg;
+  const sampler = st.sampler || base.sampler, scheduler = st.scheduler || base.scheduler;
+  const size = it.base_size || (st.hires && it.size ? it.size.map((v) => Math.round(v / st.hires.scale / 8) * 8) : it.size);
+  const loras = (st.loras || []).map((l) => `<lora:${stem(l.file)}:${l.strength}>`).join(" ");
+  const prompt = [it.positive_final || it.prompt || "", loras].filter(Boolean).join(" ");
+  const p = [
+    `Steps: ${steps}`, `CFG scale: ${cfg}`, `Sampler: ${SAMPLER_NAMES[sampler] || sampler}`,
+    `Schedule type: ${SCHEDULER_NAMES[scheduler] || scheduler}`, `Seed: ${it.seed}`,
+    size && `Size: ${size[0]}x${size[1]}`, `Model: ${stem(m.files?.[0]) || it.model}`,
+  ];
+  if (st.hires) {
+    p.push(`Hires upscale: ${st.hires.scale}`, `Hires steps: ${st.hires.steps}`,
+      st.hires.cfg != null && st.hires.cfg !== "" && `Hires CFG Scale: ${st.hires.cfg}`,
+      `Hires upscaler: ${stem(st.hires.upscaler || DEFAULT_UPSCALER)}`, `Denoising strength: ${st.hires.denoise}`);
+  } else if (it.mode === "img2img" && st.denoise != null) {
+    p.push(`Denoising strength: ${st.denoise}`);
+  }
+  if (m.params?.clip_skip) p.push(`Clip skip: ${m.params.clip_skip}`);
+  return `${prompt}\n${it.negative_final ? `Negative prompt: ${it.negative_final}\n` : ""}${p.filter(Boolean).join(", ")}`;
+}
+
+function paramsBlock(it) {
+  const st = it.settings || {};
+  const m = S.catalog.models.find((x) => x.key === it.model) || { params: {} };
+  const base = (it.mode === "edit" && m.edit_params) || m.params || {};
+  const lora = (l) => {
+    const c = S.catalog.loras.find((x) => x.file === l.file);
+    return `${c?.title || stem(l.file)} — ${String(l.strength).replace(".", ",")}${l.variant ? ` (${l.variant})` : ""}`;
+  };
+  const rows = [
+    ["Модель", it.model_title || it.model],
+    ["Режим", { text: "без картинки", img2img: "img2img — перерисовка первой картинки", edit: "с референсами" }[it.mode] || it.mode],
+    it.preset_title && ["Заготовка", it.preset_title + (it.white_bg ? ", белый фон" : "")],
+    ["Размер", it.base_size && it.size && it.base_size[0] !== it.size[0] ? `${it.base_size.join("×")} → ${it.size.join("×")}` : (it.size || []).join("×")],
+    ["Шаги · CFG", `${st.steps || base.steps} · ${st.cfg ?? base.cfg}`],
+    ["Сэмплер · планировщик", `${st.sampler || base.sampler} · ${st.scheduler || base.scheduler}`],
+    ["Seed", it.seed],
+    it.mode === "img2img" && ["Сила изменений", st.denoise],
+    st.hires && ["Hires fix", `×${st.hires.scale}, сила ${st.hires.denoise}, ${st.hires.steps} шагов${st.hires.cfg != null && st.hires.cfg !== "" ? `, CFG ${st.hires.cfg}` : ""}, ${stem(st.hires.upscaler || DEFAULT_UPSCALER)}`],
+    (st.loras || []).length > 0 && ["LoRA", st.loras.map(lora).join("; ")],
+    st.quality === false && ["Теги качества", "выключены"],
+    ["Итоговый промпт", it.positive_final],
+    it.negative_final && ["Итоговый негатив", it.negative_final],
+    it.seconds && ["Время", seconds(it.seconds)],
+  ].filter(Boolean);
+  const text = paramsText(it);
+  return h("details", { class: "params" },
+    h("summary", {}, "Все параметры"),
+    h("dl", {}, rows.map(([k, v]) => [h("dt", {}, k), h("dd", {}, String(v ?? ""))])),
+    h("p", { class: "small" }, "В формате Civitai / A1111 — его понимает «Вставить параметры» здесь, на Civitai и в A1111/Forge:"),
+    h("pre", { class: "params-text" }, text),
+    h("button", {
+      class: "btn", onclick: async (e) => {
+        const btn = e.currentTarget;
+        const ok = await copyText(text);
+        toast(ok ? "Параметры скопированы — вставьте их кнопкой «Вставить параметры»" : "Не получилось скопировать — выделите текст выше вручную", ok ? "info" : "error");
+        if (ok) { btn.textContent = "✓ Скопировано"; setTimeout(() => { btn.textContent = "Скопировать параметры"; }, 2000); }
+      },
+    }, "Скопировать параметры"));
+}
+
+// Clipboard: navigator.clipboard works only on https or localhost; over the home network
+// (http://192.168…) the old execCommand way is the one that works.
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through */ }
+  const area = h("textarea", { style: "position:fixed;top:0;left:0;opacity:0", readonly: true });
+  area.value = text;
+  ($("#viewer").open ? $("#viewer") : document.body).append(area);
+  area.select();
+  area.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  area.remove();
+  return ok;
 }
 
 // Pinch, double tap and wheel zoom the picture itself (not the page); drag moves a zoomed

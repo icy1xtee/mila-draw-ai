@@ -1,5 +1,5 @@
 {
-  "_doc": "Pre-prompts of Mila Draw AI. kinds: what to draw without a picture. actions: what to do with attached pictures. tags go to tag models (illustrious, anima), text to FLUX; <ref_image_0>, <ref_image_1>... are the attached pictures in FLUX edit mode. negative: only for models where the negative works. denoise: how much img2img changes the first picture (tag models). references: the action needs a model that takes reference images. description: what the preset does, shown on the page. model: the model the page switches to when the action is chosen (the user can change it). size: key of sizes; for actions without size the result keeps the picture's proportions. The page shows what each preset adds. No project or story context here.",
+  "_doc": "Pre-prompts of Mila Draw AI. kinds: what to draw without a picture; the first one («Без шаблона», id \"other\": adds nothing) is chosen by default. actions: what to do with attached pictures. tags go to tag models (illustrious, anima), text to FLUX; <ref_image_0>, <ref_image_1>... are the attached pictures in FLUX edit mode. negative: only for models where the negative works. denoise: how much img2img changes the first picture (tag models). references: the action needs a model that takes reference images. description: what the preset does, shown on the page. model: the model the page switches to when the action is chosen (the user can change it). size: key of sizes; for actions without size the result keeps the picture's proportions. The page shows what each preset adds. No project or story context here.",
   "sizes": {
     "portrait": {
       "title": "9:16",
@@ -34,9 +34,17 @@
   },
   "kinds": [
     {
+      "id": "other",
+      "title": "Без шаблона",
+      "description": "Ничего не добавляется к промпту — модель рисует ровно то, что написано.",
+      "size": "square",
+      "tags": "",
+      "text": ""
+    },
+    {
       "id": "character",
       "title": "Персонаж",
-      "description": "Один персонаж в полный рост, вертикальный кадр 9:16. Можно на белом фоне — удобно как референс и для дальнейшей отрисовки.",
+      "description": "Один персонаж в полный рост. Можно на белом фоне — удобно как референс и для дальнейшей отрисовки.",
       "size": "portrait",
       "white_bg": true,
       "tags": "solo, full body",
@@ -45,18 +53,10 @@
     {
       "id": "background",
       "title": "Фон",
-      "description": "Пейзаж или интерьер без людей, горизонтальный кадр 16:9.",
+      "description": "Пейзаж или интерьер без людей.",
       "size": "landscape",
       "tags": "no humans, scenery",
       "text": "A scenery illustration with no people."
-    },
-    {
-      "id": "other",
-      "title": "Другое",
-      "description": "Ничего не добавляется — только ваш промпт. Квадрат 1:1.",
-      "size": "square",
-      "tags": "",
-      "text": ""
     }
   ],
   "actions": [

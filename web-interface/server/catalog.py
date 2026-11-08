@@ -165,7 +165,10 @@ def assemble(model, preset, white_bg, prompt, negative, loras=(), quality=True):
         if white_bg and preset.get("white_bg"):
             parts.append(presets()["white_bg"][key])
     parts.append(prompt)
-    parts += [l.get("trigger", "") for l in loras]
+    # A trigger already in the prompt (pasted parameters carry them) is not added twice.
+    have = (prompt or "").lower()
+    parts += [", ".join(w for w in (l.get("trigger") or "").split(", ") if w.strip().lower() not in have)
+              for l in loras]
     positive = smart_join(parts)
 
     if not model.get("negative_works", True):

@@ -141,6 +141,24 @@ async def delete_task(task_id: str):
     return {"ok": True}
 
 
+@app.delete("/api/pictures/{path:path}")
+async def delete_picture(path: str):
+    """Delete one picture (a failed generation or an attached picture) with its .json."""
+    busy = any(path in j.form.get("images", []) for j in jobs.jobs if j.status in ("queued", "running"))
+    if busy:
+        raise HTTPException(409, "Эта картинка нужна генерации, которая идёт сейчас, — дождитесь конца или отмените её")
+    try:
+        tasks.delete_picture(path)
+    except PermissionError:
+        raise HTTPException(403)
+    except FileNotFoundError:
+        raise HTTPException(404, "Нет такой картинки")
+    except OSError as e:
+        raise HTTPException(500, f"Не получилось удалить: {e}")
+    log.info("picture %s deleted", path)
+    return {"ok": True}
+
+
 @app.post("/api/tasks/{task_id}/uploads")
 async def upload(task_id: str, files: list[UploadFile] = File(...)):
     """Attach pictures; Claude starts describing each one at once."""
