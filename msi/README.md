@@ -83,23 +83,24 @@ Anima, FLUX 3 Klein и утилиты (≈ 40 ГБ), Qwen-Image — нет; по
 | Anima: Base + Aesthetic + Turbo                    | фоны; Base — для обучения LoRA                   | три файла: DiT, текстовый энкодер Qwen3-0.6B, VAE Qwen-Image   |
 | FLUX 3 Image Klein, INT8                           | правки по инструкции, референсы                  | INT8 рассчитана на 8 ГБ; при 16 ГБ RAM следить за свопом       |
 | Qwen-Image-2.1, GGUF                               | эксперименты, прозрачный фон                     | только после апгрейда RAM до 32 ГБ; некоммерческая лицензия    |
-| BiRefNet (Comfy-Org, MIT)                          | удаление фона: кнопка в веб-интерфейсе           | стоит: `models/background_removal/birefnet.safetensors`, 444 МБ; встроенные ноды ComfyUI 0.44 |
+| BiRefNet (Comfy-Org, MIT)                          | удаление фона (в Mila Draw AI убрано 08.11)      | стоит: `models/background_removal/birefnet.safetensors`, 444 МБ; встроенные ноды ComfyUI 0.44 |
 | аниме-апскейлер (ESRGAN)                           | фоны до 2560×1440                                | —                                                              |
 
-## Веб-интерфейс
+## Mila Draw AI (веб-интерфейс)
 
-Рабочее место Милы — [web-interface/](../web-interface/README.md). Из корня репо (в
-PowerShell — с `.\` впереди):
+Инструмент Милы — [web-interface/](../web-interface/README.md): прикрепить картинку и
+доработать её моделью или нарисовать по промпту. Из корня репо (в PowerShell — с `.\`
+впереди):
 
 ```bat
-studio start      :: ComfyUI + интерфейс на порту 8000, фоном
+studio start      :: ComfyUI + Mila Draw AI на порту 8000, фоном
 studio stop       :: погасить оба
 studio status     :: что запущено и адреса
 ```
 
 Остальные команды (по отдельности, логи) — в
-[README интерфейса](../web-interface/README.md#запуск-и-остановка). ComfyUI остаётся на
-`127.0.0.1`: с ним говорит только сервер интерфейса.
+[README](../web-interface/README.md#запуск-и-остановка). ComfyUI остаётся на `127.0.0.1`: с
+ним говорит только сервер Mila Draw AI.
 
 ## Генерация из терминала (API ComfyUI)
 

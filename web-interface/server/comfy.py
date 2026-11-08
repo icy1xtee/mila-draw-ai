@@ -8,7 +8,7 @@ import uuid
 import httpx
 import websockets
 
-log = logging.getLogger("studio.comfy")
+log = logging.getLogger("mila.comfy")
 
 
 class ComfyError(RuntimeError):
@@ -40,6 +40,19 @@ class Comfy:
         except httpx.HTTPError:
             return []
 
+    async def sampler_options(self):
+        """Sampler and scheduler names that this ComfyUI knows (for the settings window)."""
+        try:
+            r = await self.http.get("/object_info/KSampler", timeout=5)
+            inputs = r.json()["KSampler"]["input"]["required"]
+
+            def options(spec):
+                return spec[1]["options"] if isinstance(spec[0], str) else spec[0]
+
+            return options(inputs["sampler_name"]), options(inputs["scheduler"])
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+            return [], []
+
     async def queue(self, graph):
         r = await self.http.post("/prompt", json={"prompt": graph, "client_id": self.client_id})
         if r.status_code != 200:
@@ -58,12 +71,12 @@ class Comfy:
         return r.content
 
     async def upload(self, data, name):
-        """Put a file into ComfyUI's input folder (subfolder 'studio'); returns the name for
+        """Put a file into ComfyUI's input folder (subfolder 'mila'); returns the name for
         LoadImage."""
         r = await self.http.post(
             "/upload/image",
             files={"image": (name, data, "image/png")},
-            data={"subfolder": "studio", "overwrite": "true", "type": "input"})
+            data={"subfolder": "mila", "overwrite": "true", "type": "input"})
         r.raise_for_status()
         info = r.json()
         return f"{info['subfolder']}/{info['name']}" if info.get("subfolder") else info["name"]

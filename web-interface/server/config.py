@@ -6,9 +6,11 @@ from pathlib import Path
 WEB = Path(__file__).resolve().parent.parent
 REPO = WEB.parent
 CONTENT = REPO / "content"
-PROTOTYPE = CONTENT / "prototype"
-CATALOG = REPO / "msi" / "catalog"
-BLOCKS = REPO / "prompts" / "blocks.json"
+TASKS = CONTENT / "tasks"
+MODELS = REPO / "msi" / "catalog" / "models.json"
+LORAS = REPO / "msi" / "catalog" / "loras.json"
+PRESETS = WEB / "presets.json"
+HELP = WEB / "help.json"
 STATIC = WEB / "static"
 CACHE = WEB / ".cache"
 CLAUDE_DIR = WEB / "claude"
@@ -32,14 +34,13 @@ _env = {
 }
 
 PASSWORD = _env.get("STUDIO_PASSWORD", "")
-USERS = [u.strip() for u in _env.get("STUDIO_USERS", "Мила,Павел").split(",") if u.strip()]
 HOST = _env.get("STUDIO_HOST", "0.0.0.0")
 PORT = int(_env.get("STUDIO_PORT", "8000"))
 COMFY_URL = _env.get("STUDIO_COMFY_URL", "http://127.0.0.1:8188").rstrip("/")
 SECRET = (_env.get("STUDIO_SECRET") or PASSWORD or "dev-secret").encode()
 CLAUDE_BIN = _env.get("STUDIO_CLAUDE", "claude")
-# Claude writes the journal after this many seconds without new events in a task.
-JOURNAL_DELAY = int(_env.get("STUDIO_JOURNAL_DELAY", "90"))
-MAX_UPLOAD_MB = int(_env.get("STUDIO_MAX_UPLOAD_MB", "50"))
-# Model for the journal and the prompt helper: an alias (sonnet, opus) or a full model id.
+# Claude model for describing pictures and the prompt helper: an alias (sonnet, opus) or an id.
 CLAUDE_MODEL = _env.get("STUDIO_CLAUDE_MODEL", "sonnet")
+MAX_UPLOAD_MB = int(_env.get("STUDIO_MAX_UPLOAD_MB", "50"))
+# Uploaded pictures are stored at most this many pixels on the long side.
+MAX_SIDE = int(_env.get("STUDIO_MAX_SIDE", "2048"))

@@ -26,7 +26,7 @@ function Get-WebPort {
 $Units = [ordered]@{
     comfy = @{ Key = "comfy"; Name = "ComfyUI"; Port = 8188; Wait = 180; Dir = $Repo
                Command = '"' + (Join-Path $PSScriptRoot "comfy_start.bat") + '"' }
-    web   = @{ Key = "web"; Name = "Web interface"; Port = (Get-WebPort); Wait = 60; Dir = $WebDir
+    web   = @{ Key = "web"; Name = "Mila Draw AI"; Port = (Get-WebPort); Wait = 60; Dir = $WebDir
                Command = "uv run --python 3.13 python -m server" }
 }
 

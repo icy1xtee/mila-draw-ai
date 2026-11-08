@@ -1,6 +1,6 @@
-"""Models, LoRA and pre-prompt blocks: msi/catalog/*.json and prompts/blocks.json.
+"""Models, LoRA and presets: msi/catalog/models.json, msi/catalog/loras.json, presets.json.
 
-Files are re-read on every call, so edits to the catalog show up without a restart.
+Files are re-read on every call, so edits show up without a restart.
 """
 
 import json
@@ -13,76 +13,70 @@ def _read(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def models_file():
-    return _read(config.CATALOG / "models.json")
-
-
 def models():
-    return models_file()["models"]
+    return _read(config.MODELS)["models"]
 
 
-def sizes():
-    return models_file()["sizes"]
+def presets():
+    return _read(config.PRESETS)
 
 
-def blocks_file():
-    return _read(config.BLOCKS)
-
-
-def described_loras():
-    return {entry["file"]: entry for entry in _read(config.CATALOG / "loras.json").get("loras", [])}
+def find_preset(preset_id):
+    """A kind (no picture) or an action (with pictures) by id; None for "my own prompt"."""
+    if not preset_id:
+        return None
+    p = presets()
+    for item in p["kinds"] + p["actions"]:
+        if item["id"] == preset_id:
+            return item
+    raise ValueError("Неизвестная заготовка")
 
 
 def lora_entries(files):
-    """Merge LoRA files that ComfyUI sees with their descriptions from loras.json."""
-    described = described_loras()
+    """LoRA files that ComfyUI sees, with titles and trigger words from loras.json."""
+    described = {e["file"]: e for e in _read(config.LORAS).get("loras", [])}
     result = []
     for name in files:
         key = name.replace("\\", "/")
-        entry = described.get(key) or described.get(name)
-        if entry:
-            result.append({"strength": 0.8, "range": [0, 1.5], **entry, "file": name,
-                           "described": True})
-        else:
-            result.append({
-                "file": name,
-                "title": PurePosixPath(key).stem,
-                "family": None,
-                "hint": "Без описания: неизвестно, к какой модели подходит.",
-                "strength": 0.8,
-                "range": [0, 1.5],
-                "described": False,
-            })
+        entry = described.get(key) or described.get(name) or {}
+        result.append({
+            "file": name,
+            "title": entry.get("title") or PurePosixPath(key).stem,
+            "family": entry.get("family"),
+            "trigger": entry.get("trigger", ""),
+            "strength": entry.get("strength", 0.8),
+            "range": entry.get("range", [0, 1.5]),
+        })
     return result
 
 
-def public(lora_files):
+def public(lora_files, samplers, schedulers):
     """What the page needs to build the form."""
-    blocks = blocks_file()
+    p = presets()
     return {
         "models": [
             {
                 "key": key,
                 "title": m.get("title", key),
-                "name": m.get("name", key),
-                "hint": m.get("hint", ""),
                 "family": m["family"],
-                "good_for": m.get("good_for", []),
+                "tags": m["family"] != "flux",
                 "negative_works": m.get("negative_works", True),
+                "references": m.get("references", False),
                 "params": m["params"],
+                "edit_params": m.get("edit_params"),
+                "prefix": m.get("prefix", ""),
+                "negative": m.get("negative", ""),
             }
             for key, m in models().items()
         ],
-        "sizes": sizes(),
+        "sizes": p["sizes"],
+        "white_bg": p["white_bg"],
+        "kinds": p["kinds"],
+        "actions": p["actions"],
         "loras": lora_entries(lora_files),
-        "groups": blocks.get("groups", {}),
-        "blocks": [
-            {k: b.get(k) for k in ("id", "title", "hint", "group", "default", "default_for")}
-            | {"families": sorted(set(b.get("tags", {})) | set(b.get("text", {}))
-                                  | set(b.get("negative", {})))
-               if b.get("source") != "model" else ["*"]}
-            for b in blocks["blocks"]
-        ],
+        "samplers": samplers,
+        "schedulers": schedulers,
+        "help": _read(config.HELP) if config.HELP.exists() else {},
     }
 
 
@@ -102,29 +96,32 @@ def smart_join(parts):
     return out
 
 
-def position(block, family):
-    pos = block.get("position", "before")
-    return pos.get(family, "before") if isinstance(pos, dict) else pos
+def assemble(model, preset, white_bg, prompt, negative, loras=(), quality=True):
+    """Final positive and negative prompt.
 
+    Tag models: quality tags, preset tags, white background, the prompt, LoRA triggers.
+    FLUX: preset sentence, white background, the prompt, LoRA triggers.
+    A tag that ends up in the positive is dropped from the negative (e.g. "sketch" in
+    WAI's negative when the preset asks for a sketch).
+    """
+    tags = model["family"] != "flux"
+    key = "tags" if tags else "text"
+    parts = []
+    if tags and quality:
+        parts.append(model.get("prefix", ""))
+    if preset:
+        parts.append(preset.get(key, ""))
+        if white_bg and preset.get("white_bg"):
+            parts.append(presets()["white_bg"][key])
+    parts.append(prompt)
+    parts += [l.get("trigger", "") for l in loras]
+    positive = smart_join(parts)
 
-def assemble(model, block_ids, prompt, negative, loras=()):
-    """Final positive and negative prompt: block tags, block phrases placed before, the user's
-    prompt, block phrases placed after, LoRA trigger words at the end. Tags always go first:
-    Anima wants tags, then sentences."""
-    family = model["family"]
-    tags, before, after, negatives = [], [], [], []
-    for block in blocks_file()["blocks"]:
-        if block["id"] not in block_ids:
-            continue
-        if block.get("source") == "model":
-            tags.append(model.get("prefix", ""))
-            negatives.append(model.get("negative", ""))
-            continue
-        tags.append(block.get("tags", {}).get(family, ""))
-        text = block.get("text", {}).get(family, "")
-        (after if position(block, family) == "after" else before).append(text)
-        negatives.append(block.get("negative", {}).get(family, ""))
-    described = described_loras()
-    triggers = [described.get(l["file"], {}).get("trigger", "") for l in loras]
-    positive = smart_join(tags + before + [prompt] + after + triggers)
-    return positive, smart_join(negatives + [negative])
+    if not model.get("negative_works", True):
+        return positive, ""
+    neg = smart_join([model.get("negative", "") if quality else "",
+                      (preset or {}).get("negative", ""), negative])
+    in_positive = {t.strip().lower() for t in positive.split(",")}
+    neg = ", ".join(t.strip() for t in neg.split(",")
+                    if t.strip() and t.strip().lower() not in in_positive)
+    return positive, neg

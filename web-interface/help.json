@@ -1,0 +1,83 @@
+{
+  "_doc": "Help window next to the model choice (button «?»). families: by model family, text = without a picture, picture = with attached pictures. Each section: how (one line), write (how to write the prompt), example, negative (optional). models: extra lines for one model (speed, quirks). Plain Russian, no project or story context.",
+  "families": {
+    "flux": {
+      "text": {
+        "how": "Рисует по описанию обычными фразами.",
+        "write": [
+          "Пишите по-английски обычными предложениями, как описание готовой картинки: кто или что, как выглядит, что делает, где, какой свет и стиль.",
+          "Главное — в начало. Чем конкретнее (цвета, материалы, поза), тем точнее.",
+          "Не пишите «без X» — модель может как раз нарисовать X. Лучше опишите, что должно быть вместо.",
+          "Можно написать по-русски и нажать «Перевести в промпт»."
+        ],
+        "example": "A girl with short silver hair in an oversized yellow raincoat stands on a rooftop at dusk, holding a paper umbrella. Soft warm light, anime illustration, clean lineart.",
+        "negative": "Не работает — поля негатива нет. Чего не нужно, просто не пишите."
+      },
+      "picture": {
+        "how": "Видит все прикреплённые картинки (до 4) и рисует новую по вашей просьбе. Лучше всех держит рисунок, позу и дизайн.",
+        "write": [
+          "Пишите как просьбу художнику: что сделать и что оставить как есть.",
+          "Картинки в промпте — <ref_image_0>, <ref_image_1>… в порядке прикрепления (на превью это 1, 2…). «Перевести в промпт» расставит их сам, если в тексте есть «эта картинка», «на фото», «мой набросок».",
+          "Заготовка уже добавила главную просьбу (видно в строке «Добавится») — допишите только своё: цвета, детали, что поменять. Можно оставить промпт пустым.",
+          "Размер результата — как у первой картинки; у «Персонаж по референсам» и «Дизайн по фото» — 9:16."
+        ],
+        "example": "Make the fur black and the guitar red. Keep everything else exactly as in <ref_image_0>.",
+        "negative": "Не работает."
+      }
+    },
+    "anima": {
+      "text": {
+        "how": "Рисует по тегам.",
+        "write": [
+          "Теги Danbooru по-английски через запятую: сначала кто (1girl, 1boy, solo, no humans), потом внешность, одежда, поза, выражение лица, фон, свет.",
+          "После тегов можно одно короткое английское предложение — то, что тегами не сказать.",
+          "Теги качества (masterpiece, best quality…) добавляются сами — галочка в настройках.",
+          "Можно написать по-русски и нажать «Перевести в промпт»."
+        ],
+        "example": "1girl, solo, short silver hair, yellow raincoat, holding umbrella, standing, rooftop, dusk, soft lighting",
+        "negative": "У Aesthetic работает: что убрать — тегами (text, extra fingers, blurry). У Turbo не работает."
+      },
+      "picture": {
+        "how": "Перерисовывает первую прикреплённую картинку (img2img). Остальные картинки не видит.",
+        "write": [
+          "Промпт описывает результат, а не команду: не «add colors», а «full color, black fur, red guitar». Команды модель не понимает.",
+          "Теги содержания с картинки нажимаются — уходят в промпт. Теги техники исходника (sketch, monochrome, lineart) лучше не добавлять, если нужен другой результат: модель повторит чёрно-белый набросок.",
+          "«Сила изменений» в настройках: 0,3 — лёгкая правка, 0,5 — заметно, 0,7 и выше — перерисовка, рисунок начинает плыть.",
+          "Раскрасить чистый лайнарт лучше FLUX: здесь при малой силе цвет почти не ложится."
+        ],
+        "example": "full color, cel shading, solo, furry, black fur, red electric guitar, spiked collar, white background",
+        "negative": "У Aesthetic работает, у Turbo нет."
+      }
+    },
+    "illustrious": {
+      "text": {
+        "how": "Рисует по тегам, классическое аниме.",
+        "write": [
+          "Только теги Danbooru по-английски через запятую — предложения понимает плохо.",
+          "Сначала кто (1girl, 1boy, solo, no humans), потом внешность, одежда, поза, выражение лица, фон, свет.",
+          "Теги качества (masterpiece, best quality…) добавляются сами — галочка в настройках.",
+          "Можно написать по-русски и нажать «Перевести в промпт»."
+        ],
+        "example": "1girl, solo, short silver hair, yellow raincoat, holding umbrella, standing, rooftop, dusk, soft lighting",
+        "negative": "Работает: что убрать — тегами. В стандартном негативе модели есть nsfw и censor — для этюдов ню выключите «Теги качества» в настройках."
+      },
+      "picture": {
+        "how": "Перерисовывает первую прикреплённую картинку (img2img). Остальные картинки не видит.",
+        "write": [
+          "Промпт описывает результат, а не команду: не «add colors», а «full color, black fur, red guitar». Команды модель не понимает.",
+          "Теги содержания с картинки нажимаются — уходят в промпт. Теги техники исходника (sketch, monochrome, lineart) лучше не добавлять, если нужен другой результат.",
+          "«Сила изменений» в настройках: 0,3 — лёгкая правка, 0,5 — заметно, 0,7 и выше — перерисовка, рисунок начинает плыть.",
+          "Раскрасить чистый лайнарт лучше FLUX."
+        ],
+        "example": "full color, cel shading, solo, furry, black fur, red electric guitar, spiked collar, white background",
+        "negative": "Работает. Для этюдов ню выключите «Теги качества»: в стандартном негативе есть nsfw и censor."
+      }
+    }
+  },
+  "models": {
+    "anima-aesthetic": ["≈ 45 с на картинку — медленнее всех, детальнее Turbo."],
+    "anima-turbo": ["≈ 8 с на картинку — быстро прикинуть идею.", "Негатив не работает."],
+    "flux3-klein": ["≈ 10 с без картинки, ≈ 30 с с картинкой."],
+    "wai-illustrious": ["≈ 18 с на картинку. Под неё больше всего готовых LoRA."]
+  }
+}

@@ -1,11 +1,9 @@
 {
-  "_doc": "Models on MSI's ComfyUI. Read by msi/scripts/comfy_generate.py and the web-interface. Fields: .claude/develop/msi/plan.md, step 5. Order = order in the web-interface.",
+  "_doc": "Models on MSI's ComfyUI. Read by msi/scripts/comfy_generate.py and the web-interface (Mila Draw AI). Order = order in the web-interface. references: the model takes reference images (FLUX edit graph, settings in edit_params).",
   "models": {
     "anima-aesthetic": {
       "name": "Anima Aesthetic v1.1 (bf16)",
       "title": "Anima Aesthetic",
-      "hint": "Фоны и персонажи, лучшее качество. Точнее всех держит сцену. ≈ 45 с на картинку.",
-      "good_for": ["backgrounds", "sprites"],
       "family": "anima",
       "source": "https://huggingface.co/circlestone-labs/Anima",
       "note": "the model card advises no score_* tags for Aesthetic, positive or negative",
@@ -17,13 +15,16 @@
         "clip": "qwen_3_06b_base.safetensors",
         "vae": "qwen_image_vae.safetensors"
       },
-      "params": { "steps": 30, "cfg": 4, "sampler": "er_sde", "scheduler": "simple" }
+      "params": {
+        "steps": 30,
+        "cfg": 4,
+        "sampler": "er_sde",
+        "scheduler": "simple"
+      }
     },
     "anima-turbo": {
       "name": "Anima Turbo v1.1 (bf16)",
       "title": "Anima Turbo",
-      "hint": "Быстрый черновик: прикинуть идею и композицию. Похож на Aesthetic, но проще. ≈ 8 с.",
-      "good_for": ["drafts", "backgrounds"],
       "family": "anima",
       "source": "https://huggingface.co/circlestone-labs/Anima",
       "prefix": "masterpiece, best quality, score_7, safe, ",
@@ -34,13 +35,16 @@
         "clip": "qwen_3_06b_base.safetensors",
         "vae": "qwen_image_vae.safetensors"
       },
-      "params": { "steps": 10, "cfg": 1, "sampler": "euler", "scheduler": "simple" }
+      "params": {
+        "steps": 10,
+        "cfg": 1,
+        "sampler": "euler",
+        "scheduler": "simple"
+      }
     },
     "flux3-klein": {
       "name": "FLUX.3 [klein] 5.6B (INT8 convrot)",
       "title": "FLUX 3 Klein",
-      "hint": "Ближе всех к semi-realism, персонажи взрослее и стабильнее. Промпт — обычными фразами. ≈ 10 с.",
-      "good_for": ["sprites", "backgrounds"],
       "family": "flux",
       "source": "https://huggingface.co/black-forest-labs; settings: official workflow flux3_klein_int8_t2i.json",
       "note": "shift ln 16 = 2.77259 for both max_shift and base_shift; empty negative; no prompt upsampler",
@@ -50,19 +54,33 @@
         "clip": "qwen3vl_4b_int8_convrot.safetensors",
         "vae": "flux2-vae.safetensors"
       },
-      "params": { "steps": 16, "cfg": 1, "sampler": "euler", "scheduler": "simple", "shift": 2.77259 }
+      "params": {
+        "steps": 16,
+        "cfg": 1,
+        "sampler": "euler",
+        "scheduler": "simple",
+        "shift": 2.77259
+      },
+      "references": true,
+      "edit_note": "edit graph = official template image_flux3_klein_distilled_image_edit.json: ReferenceMultiLatent (1 MP), no ModelSamplingFlux, references <ref_image_0>, <ref_image_1>... in the prompt",
+      "edit_params": {
+        "steps": 16,
+        "cfg": 1,
+        "sampler": "euler",
+        "scheduler": "simple"
+      }
     },
     "wai-illustrious": {
       "name": "WAI-Illustrious-SDXL v17.0 (FP16)",
       "title": "WAI-Illustrious",
-      "hint": "Типовое чистое аниме, больше всего готовых LoRA. Промпт — теги через запятую. ≈ 18 с.",
-      "good_for": ["sprites"],
       "family": "illustrious",
       "source": "https://civitai.com/models/827184",
       "prefix": "masterpiece, best quality, amazing quality, ",
       "negative": "bad quality, worst quality, worst detail, sketch, censor, nsfw",
       "negative_works": true,
-      "files": { "checkpoint": "WAI-Nsfw-Illustrious-17.safetensors" },
+      "files": {
+        "checkpoint": "WAI-Nsfw-Illustrious-17.safetensors"
+      },
       "params": {
         "steps": 28,
         "cfg": 6,
@@ -71,10 +89,5 @@
         "clip_skip": 2
       }
     }
-  },
-  "sizes": {
-    "background": { "title": "Фон 16:9", "width": 1344, "height": 768 },
-    "sprite": { "title": "Спрайт 9:16", "width": 768, "height": 1344 },
-    "square": { "title": "Квадрат", "width": 1024, "height": 1024 }
   }
 }

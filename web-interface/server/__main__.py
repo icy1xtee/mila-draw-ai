@@ -1,4 +1,4 @@
-"""python -m server — start the web interface (host and port from .env)."""
+"""python -m server — start Mila Draw AI (host and port from .env)."""
 
 import logging
 import socket
@@ -19,6 +19,6 @@ def lan_address():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-    print(f"Web interface: http://127.0.0.1:{config.PORT}  |  home network: "
+    print(f"Mila Draw AI: http://127.0.0.1:{config.PORT}  |  home network: "
           f"http://{lan_address()}:{config.PORT}", flush=True)
     uvicorn.run("server.app:app", host=config.HOST, port=config.PORT, log_level="warning")
