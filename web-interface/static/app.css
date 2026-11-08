@@ -425,6 +425,7 @@ dialog::backdrop { background: rgb(0 0 0 / 55%); }
 
 .clearable { position: relative; }
 .clearable textarea { padding-right: 40px; display: block; }
+.clearable textarea.auto-grow { resize: none; overflow: hidden; }
 .clear-btn {
   position: absolute; top: 4px; right: 4px;
   width: 32px; height: 32px;
@@ -514,10 +515,9 @@ dialog::backdrop { background: rgb(0 0 0 / 55%); }
 .square-btn.danger:hover { border-color: var(--err); }
 .square-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 
-.composer-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.composer-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.composer-top .btn { flex: 1 1 auto; justify-content: center; }
 
-/* «не для продажи» on LoRA: not on phones (Pavel keeps track of licenses himself) */
-@media (max-width: 700px) { .lora-card .muted-pill { display: none; } }
 
 /* --- all parameters of a picture in the viewer ---------------------------------------------- */
 .params { margin-top: 4px; }

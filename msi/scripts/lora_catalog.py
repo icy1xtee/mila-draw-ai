@@ -105,6 +105,14 @@ def doc():
            "**Лицензия.** «Продавать картинки — да» значит, что автор на Civitai разрешил продавать "
            "сгенерированные картинки. «нет» — только для себя и этюдов: для ассетов продаваемой игры "
            "не годится.", ""]
+    # Heading anchors as GitHub makes them: a repeated title gets -1, -2, …
+    anchors, seen = {}, {}
+    for family in FAMILIES:
+        for e in entries:
+            if e.get("family") == family:
+                a = anchor(e["title"])
+                anchors[e["file"]] = a + (f"-{seen[a]}" if seen.get(a) else "")
+                seen[a] = seen.get(a, 0) + 1
     for family, title in FAMILIES.items():
         group = [e for e in entries if e.get("family") == family]
         if not group:
@@ -114,7 +122,7 @@ def doc():
                 "| --- | --- | --- | --- | --- | --- |"]
         for e in group:
             trig = e.get("trigger") or " / ".join(v["word"] for v in e.get("variants", [])) or "—"
-            out.append(f"| [{e['title']}](#{anchor(e['title'])}) | {KINDS.get(e.get('kind'), '')} | "
+            out.append(f"| [{e['title']}](#{anchors[e['file']]}) | {KINDS.get(e.get('kind'), '')} | "
                        f"{e.get('hint', '')} | `{trig}` | {fmt(e.get('strength'))} | "
                        f"{'да' if e.get('license', {}).get('images_commercial') else 'нет'} |")
         out.append("")
@@ -130,7 +138,7 @@ def doc():
                 out.append("- **Варианты** (выбрать один):")
                 out += [f"  - `{v['word']}` — {v['title']}" for v in e["variants"]]
             if e.get("words"):
-                out.append("- **Слова по желанию** (нажимаются в промпт):")
+                out.append("- **Слова по желанию** (кнопка копирует, вставить в промпт самому):")
                 out += [f"  - `{w['text']}` — {w['title']}" for w in e["words"]]
             rng = e.get("range", [0, 1.5])
             out.append(f"- **Сила:** {fmt(e.get('strength'))} (ползунок {fmt(rng[0])}…{fmt(rng[1])})")

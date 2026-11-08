@@ -2,6 +2,22 @@
   "_doc": "LoRA in C:\\AI\\ComfyUI\\ComfyUI\\models\\loras\\<family>\\. Single source for Mila Draw AI (the LoRA block) and for the docs (msi/scripts/lora_catalog.py doc → msi/catalog/loras.md and README.md next to the files). Filled from Civitai by file hash (msi/scripts/lora_catalog.py scan). file: path inside loras/ with /. family: illustrious | anima | krea2 | flux (a file without an entry gets the family from its folder). kind: style | detail | quality | clothes | effect | concept | service. hint: one line, what it does. trigger: always added to the prompt when the LoRA is on. variants: [{word, title}] — one is chosen on the page and added to the prompt. words: [{text, title}] — optional words, tapped into the prompt. strength: default; range: slider. settings: what the author recommends (the page can apply it). how / avoid: lines for the page and the docs. license: images_commercial = Civitai allows selling generated images; note = what else to know. All texts in Russian, no project or story context.",
   "loras": [
     {
+      "file": "anima/DynamicPoser_slider_ANIMA.safetensors",
+      "family": "anima",
+      "kind": "concept",
+      "title": "Dynamic Poses Slider",
+      "hint": "Ползунок динамики: позы живее и резче, ракурсы смелее — ракурс снизу или сверху, перспектива, сокращения.",
+      "words": [{"text": "dynamic pose", "title": "динамичная поза"}, {"text": "foreshortening, extreme perspective", "title": "сильный ракурс"}],
+      "strength": 2.0,
+      "range": [0, 5],
+      "how": ["Сила здесь особая: у Anima эффект хорошо заметен с 3; начните с 2.", "Слова не обязательны, но dynamic pose и похожие помогают обойтись меньшей силой.", "Позу и действие всё равно опишите в промпте: ползунок делает её динамичнее, но не придумывает."],
+      "avoid": ["Чем выше сила, тем сильнее меняется стиль. Автор выключает LoRA после 30–60% шагов, у нас так нельзя. Вместо этого: картинку с удачной позой «Доработать» без этой LoRA с заготовкой «Полировка».", "Для спокойных портретов и персонажа-референса в нейтральной позе не нужна."],
+      "source": "https://civitai.com/models/438059?modelVersionId=3261827",
+      "version": "Dynamic Poses Slider ANI",
+      "author": "N4Talent",
+      "license": {"images_commercial": true}
+    },
+    {
       "file": "anima/Niji_semi_realism_v5.safetensors",
       "family": "anima",
       "kind": "style",
@@ -337,6 +353,22 @@
       "source": "https://civitai.com/models/3010482?modelVersionId=3416422",
       "version": "Illustrious",
       "author": "VIA_AI",
+      "license": {"images_commercial": true}
+    },
+    {
+      "file": "illustrious/DynamicPoseIL2att_alpha1.0_rank4_noxattn_900steps.safetensors",
+      "family": "illustrious",
+      "kind": "concept",
+      "title": "Dynamic Poses Slider",
+      "hint": "Ползунок динамики: позы живее и резче, ракурсы смелее — ракурс снизу или сверху, перспектива, сокращения.",
+      "words": [{"text": "dynamic pose, foreshortening, extreme perspective", "title": "динамика и ракурс — слова автора"}],
+      "strength": 1.5,
+      "range": [0, 4],
+      "how": ["Сила здесь особая: автор пишет, что подходят 1, 2, 3, иногда 4 — зависит от промпта. Начните с 1,5.", "Слова-ключи не обязательны, но помогают.", "Работает и на Illustrious, и на NoobAI — WAI подходит.", "Позу и действие опишите в промпте: ползунок делает её динамичнее, но не придумывает."],
+      "avoid": ["Слишком большая сила делает цвета плоскими. Автор выключает LoRA после 50–60% шагов, у нас так нельзя. Вместо этого: картинку с удачной позой «Доработать» без этой LoRA с заготовкой «Полировка».", "Для спокойных портретов и персонажа-референса в нейтральной позе не нужна."],
+      "source": "https://civitai.com/models/438059?modelVersionId=1607510",
+      "version": "Illustrious/NoobAI (both)",
+      "author": "N4Talent",
       "license": {"images_commercial": true}
     },
     {

@@ -43,7 +43,8 @@ const ICON_PLUS = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" s
 const ICON_EDIT = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const ICON_BACK = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
 const ICON_PASTE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 13h6M9 17h4"/></svg>';
-const ICON_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+const ICON_RESET = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+const ICON_UNDO ='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 const ICON_GEAR = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 const icon = (svg) => { const t = document.createElement("template"); t.innerHTML = svg; return t.content.firstChild; };
 
@@ -434,7 +435,7 @@ async function openTask(id) {
     rows: 2, value: S.draft.negative, onpaste: pastePrompt,
     oninput: () => { S.draft.negative = ui.negative.value; S.draft.undo = null; saveDraft(); renderPromptTools(); },
   });
-  ui.negativeBox = h("details", { class: "negative", open: !!S.draft.negative },
+  ui.negativeBox = h("details", { class: "negative", open: !!S.draft.negative, ontoggle: () => grow(ui.negative) },
     h("summary", {}, "Негативный промпт"),
     clearable(ui.negative, () => setPrompt(ui.prompt.value, "")));
   ui.promptBlock = h("section", { class: "block" },
@@ -466,7 +467,7 @@ async function openTask(id) {
   const composer = h("div", { class: "composer card" },
     h("div", { class: "composer-top" },
       h("button", { class: "btn", title: "Промпт и настройки из Civitai, A1111, Forge или из картинки здесь («Скопировать параметры» в просмотре)", onclick: openImport }, icon(ICON_PASTE), "Вставить параметры"),
-      h("span", { class: "small muted" }, "из Civitai или из своей картинки")),
+      h("button", { class: "btn", title:"Очистить промпт, помощника, заготовку, размер и вернуть настройки модели и LoRA к стандартным", onclick: resetAll }, icon(ICON_RESET), "Сбросить всё")),
     ui.attach, ui.presets, ui.brainstorm, ui.model, ui.loras, ui.assistant, ui.promptBlock, ui.submit);
 
   render(h("div", { class: "page task" },
@@ -482,9 +483,22 @@ async function openTask(id) {
       h("div", { class: "task-right" }, ui.jobs, ui.history))));
 
   refreshComposer();
+  syncClear(); // fields are on the page now: grow them to their text
   renderHistory();
   renderTaskJobs();
   pollTask();
+}
+
+// «Сбросить всё»: the composer as in a new task — only the chosen model stays. Pictures stay in
+// the task's history (they are only detached).
+function resetAll() {
+  const m = model();
+  if (!window.confirm(`Сбросить всё?\n\nОчистятся промпт, негатив и помощник, заготовка станет «${S.catalog.kinds[0]?.title}», ` +
+    `прикреплённые картинки открепятся (в истории задачи они останутся), а настройки ${m.title} и LoRA вернутся к стандартным.`)) return;
+  store.set("settings:" + m.key, {});
+  store.set("draft:" + S.task.id, { model: m.key });
+  S.loraOpen?.clear();
+  openTask(S.task.id).then(() => toast("Всё сброшено", "info"));
 }
 
 async function renameTask() {
@@ -604,13 +618,13 @@ function analysisView(it, interactive) {
     tags = tags.filter((t) => !MEDIUM.has(t));
   }
   const tagButton = (t) => interactive
-    ? h("button", { class: "tag", title: "В промпт", onclick: () => addToPrompt(t) }, t)
+    ? h("button", { class: "tag", title: "Скопировать, чтобы вставить в промпт", onclick: () => copyTags(t) }, t)
     : h("span", { class: "tag" }, t);
   const box = h("div", { class: "tags" });
   const drawTags = (all) => {
     const shown = all ? tags : tags.slice(0, SHOW_TAGS);
     fill(box,
-      interactive && tags.length > 0 && h("button", { class: "tag all", onclick: () => addToPrompt(tags.join(", ")) }, "＋ все теги"),
+      interactive && tags.length > 0 && h("button", { class: "tag all", title: "Скопировать все теги, чтобы вставить в промпт", onclick: () => copyTags(tags.join(", ")) }, "⧉ все теги"),
       shown.map(tagButton),
       !all && tags.length > SHOW_TAGS && h("button", { class: "tag more", onclick: () => drawTags(true) },
         `ещё ${tags.length - SHOW_TAGS}`));
@@ -639,18 +653,13 @@ async function describe(file, again = false) {
   } catch (e) { toast(e.message); }
 }
 
-function addToPrompt(text) {
-  const cur = S.ui.prompt.value.trim();
-  // Tags already in the prompt are not added again (pressing «＋ все теги» twice changes nothing).
-  const have = new Set(splitTags(cur.toLowerCase()));
-  const fresh = splitTags(text).filter((t) => !have.has(t.toLowerCase()));
-  if (!fresh.length) return;
-  text = fresh.join(", ");
-  S.ui.prompt.value = cur ? `${cur.replace(/[,\s]+$/, "")}, ${text}` : text;
-  S.draft.prompt = S.ui.prompt.value;
-  S.draft.undo = null;
-  saveDraft();
-  renderPromptTools();
+// Tags go to the clipboard, not into the prompt: where they stand in the prompt matters, so
+// Mila pastes them herself.
+async function copyTags(text) {
+  const ok = await copyText(text);
+  const shown = text.length > 60 ? text.slice(0, 57) + "…" : text;
+  toast(ok ? `Скопировано: «${shown}» — вставьте в промпт в нужное место`
+    : "Не получилось скопировать — выделите текст вручную", ok ? "info" : "error");
 }
 
 function attach(file) {
@@ -917,7 +926,6 @@ function loraCard(m, l) {
       h("label", { class: "check" },
         h("input", { type: "checkbox", checked: st.on, onchange: (e) => { setLora(m, l.file, { on: e.target.checked }); refreshComposer(); } }),
         h("b", {}, l.title)),
-      lic.images_commercial === false && h("span", { class: "pill muted-pill", title: "Автор не разрешает продавать картинки: для этюдов, не для ассетов игры" }, "не для продажи"),
       h("span", { class: "spacer" }),
       h("button", { class: "link small-link", onclick: toggleOpen }, isOpen ? "Скрыть" : "Подробнее")),
     h("p", { class: "small muted" }, l.hint || (l.family ? "Описания нет — пришлите ссылку на Civitai." : "Описания нет, и непонятно, к какой модели она подходит.")),
@@ -933,8 +941,8 @@ function loraCard(m, l) {
           l.variants.map((v) => h("option", { value: v.word, selected: v.word === variant }, v.title)))),
       adds && h("p", { class: "small" }, "В промпт добавится само: ", h("code", {}, adds)),
       l.words?.length > 0 && h("div", { class: "tags" },
-        h("span", { class: "small muted" }, "по желанию:"),
-        l.words.map((w) => h("button", { class: "tag", title: w.text, onclick: () => addToPrompt(w.text) }, "＋ " + w.title))),
+        h("span", { class: "small muted" }, "по желанию, скопировать:"),
+        l.words.map((w) => h("button", { class: "tag", title: `Скопировать «${w.text}», чтобы вставить в промпт`, onclick: () => copyTags(w.text) }, "⧉ " + w.title))),
       settingsText && h("button", {
         class: "link", title: "Автор этой LoRA советует такие настройки модели",
         onclick: () => applyLoraSettings(m, l),
@@ -969,7 +977,8 @@ function applyLoraSettings(m, l) {
 function clearable(input, onClear) {
   const btn = h("button", { class: "clear-btn", type: "button", title: "Очистить", onclick: () => { onClear(); box.sync(); input.focus(); } }, "✕");
   const box = h("div", { class: "clearable" }, input, btn);
-  const sync = () => btn.classList.toggle("hidden", !input.value);
+  const sync = () => { btn.classList.toggle("hidden", !input.value); grow(input); };
+  input.classList.add("auto-grow");
   input.addEventListener("input", sync);
   box.sync = sync;
   sync();
@@ -978,6 +987,14 @@ function clearable(input, onClear) {
 }
 const clearables = new Set();
 const syncClear = () => clearables.forEach((b) => (b.isConnected ? b.sync() : clearables.delete(b)));
+window.addEventListener("resize", syncClear);
+
+// The prompt, negative and helper fields grow with their text instead of scrolling inside.
+function grow(el) {
+  if (el.tagName !== "TEXTAREA" || !el.offsetParent) return; // hidden (closed negative): on open
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + (el.offsetHeight - el.clientHeight) + "px";
+}
 
 // Replace the prompt (and the negative, if given), remembering the old text for «Вернуть».
 function setPrompt(prompt, negative) {
@@ -1911,10 +1928,7 @@ function openViewer(file, opts = {}) {
   }
 
   dlg.onclose = opts.onClose ? () => opts.onClose(opts) : null;
-  dlg.onkeydown = (e) => {
-    if (e.key === "ArrowRight") step(1);
-    if (e.key === "ArrowLeft") step(-1);
-  };
+  viewerStep = step;
   show();
   openDialog(dlg);
 }
@@ -2117,6 +2131,18 @@ function zoomable(box, img, onSwipe) {
     apply(false);
   }, { passive: false });
 }
+
+// ← / → page through the open viewer. Listened on the document: paging redraws the viewer, the
+// focused button goes away and focus falls to <body>, outside the dialog.
+let viewerStep = null;
+document.addEventListener("keydown", (e) => {
+  if (!$("#viewer").open || !viewerStep || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    e.preventDefault();
+    viewerStep(e.key === "ArrowRight" ? 1 : -1);
+  }
+});
 
 // Safari (iPad) zooms the whole page on pinch even with touch-action: stop it while the
 // viewer is open.
